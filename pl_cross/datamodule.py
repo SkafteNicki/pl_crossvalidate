@@ -14,3 +14,9 @@ class BaseKFoldDataModule(LightningDataModule, ABC):
         dataset/dataloader should look for the current fold
         """
         pass
+    
+    
+class KFoldDataModule(BaseKFoldDataModule):
+    def __init__(self):
+        pass
+
