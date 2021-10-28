@@ -1,5 +1,4 @@
 import pytest
-from torch._C import Value
 
 from .boring_model import RandomDataset, BoringDataModule, RandomLabelDataset, RandomDictLabelDataset
 from pl_cross import KFoldDataModule

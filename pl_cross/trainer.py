@@ -3,14 +3,10 @@ from typing import Optional
 from torch.utils.data import DataLoader
 from pytorch_lightning import LightningModule, LightningDataModule
 from pytorch_lightning import Trainer as Trainer_pl
-from pytorch_lightning.loops.base import Loop
 
 from pl_cross.datamodule import BaseKFoldDataModule, KFoldDataModule
+from pl_cross.loop import KFoldLoop
 
-
-class KFold(Loop):
-    def __init__(self):
-        pass
 
 class Trainer(Trainer_pl):
     """ 
@@ -18,15 +14,28 @@ class Trainer(Trainer_pl):
     in pytorch lightning
     
     Args:
-        K: number of folds for cross validation
-        stratified: boolean indicating if folds should be constructed in a
-            stratified way. Currently only supported if you dataset has a `labels`
-            attribute.
+        num_folds: number of folds for cross validation
+        shuffle: boolean indicating if samples should be shuffled before creating folds
+        stratified: boolean indicating if folds should be constructed in a stratified way.
         *args: additional arguments to pass to normal trainer constructor
         **kwargs: additional keyword arguments to pass to normal trainer constructor
     """
-    def __init__(self, K: int = 5, stratified: bool = False, *args, **kwargs):
-        self.K = K
+    def __init__(
+        self,
+        num_folds: int = 5,
+        shuffle: bool = False,
+        stratified: bool = False,
+        *args,
+        **kwargs
+    ) -> None:
+        if not isinstance(num_folds, int) or num_folds < 2:
+            raise ValueError("Expected argument `num_folds` to be an integer larger than or equal to 2")
+        self.num_folds = num_folds
+        if not isinstance(shuffle, bool):
+            raise ValueError("Expected argument `shuffle` to be an boolean")
+        self.shuffle = shuffle
+        if not isinstance(stratified, bool):
+            raise ValueError("Expected argument `stratified` to be an boolean")
         self.stratified = stratified
         super().__init__(*args, **kwargs)
 
@@ -37,7 +46,7 @@ class Trainer(Trainer_pl):
         datamodule: Optional[LightningDataModule] = None,
     ) -> None:
         # overwrite standard fit loop
-        self.fit_loop = KFold(self.K, self.fit_loop)
+        self.fit_loop = KFoldLoop(self.num_folds, self.fit_loop)
         
         # construct K fold datamodule if user is not already passing one in
         cond = (
@@ -45,7 +54,7 @@ class Trainer(Trainer_pl):
             datamodule is not None and not isinstance(datamodule, BaseKFoldDataModule)
         )
         if cond:
-            datamodule = KFoldDataModule(train_dataloader, datamodule)
+            datamodule = KFoldDataModule(self.num_folds, self.shuffle, self.stratified, train_dataloader, datamodule)
             
         self.fit(model, datamodule=datamodule)
         
