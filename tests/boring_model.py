@@ -34,6 +34,22 @@ class RandomDataset(Dataset):
         return self.len
 
 
+class RandomLabelDataset(RandomDataset):
+    def __init__(self, size: int, length: int):
+        super().__init__(size, length)
+        self.target = torch.randint(2, (length,))
+
+    def __getitem__(self, index):
+        return self.data[index], self.target[index]
+
+
+class RandomDictLabelDataset(RandomDictDataset):
+    def __getitem__(self, index):
+        a = self.data[index]
+        b = torch.randint(2, (1,))
+        return {"a": a, "b": b}
+
+
 class RandomIterableDataset(IterableDataset):
     def __init__(self, size: int, count: int):
         self.count = count
@@ -136,14 +152,12 @@ class BoringModel(LightningModule):
 
 
 class BoringDataModule(LightningDataModule):
-    def __init__(self, data_dir: str = "./"):
-        super().__init__()
-        self.data_dir = data_dir
-        self.non_picklable = None
-        self.checkpoint_state: Optional[str] = None
+    def __init__(self, with_labels=False):
+        self.with_labels = with_labels
 
     def prepare_data(self):
-        self.random_full = RandomDataset(32, 64 * 4)
+        dataclass = RandomLabelDataset if self.with_labels else RandomDataset
+        self.random_full = dataclass(32, 64 * 4)
 
     def setup(self, stage: Optional[str] = None):
         if stage == "fit" or stage is None:
