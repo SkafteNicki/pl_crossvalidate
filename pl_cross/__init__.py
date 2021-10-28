@@ -38,4 +38,4 @@ if __PL_CROSS__:  # pragma: no cover
 else:
     # import modules
     from .trainer import Trainer
-    from .datamodule import BaseKFoldDataModule
+    from .datamodule import BaseKFoldDataModule, KFoldDataModule
