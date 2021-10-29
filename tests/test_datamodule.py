@@ -1,31 +1,33 @@
 import pytest
-
-from .boring_model import RandomDataset, BoringDataModule, RandomLabelDataset, RandomDictLabelDataset
-from pl_cross import KFoldDataModule
-
 import torch
 from torch.utils.data import DataLoader
+
+from pl_cross import KFoldDataModule
+
+from .boring_model import (BoringDataModule, RandomDataset,
+                           RandomDictLabelDataset, RandomLabelDataset)
+
 
 def test_initialization():
     train_dataloader = DataLoader(RandomDataset(32, 64))
     datamodule = BoringDataModule()
-    
+
     with pytest.raises(ValueError):
         KFoldDataModule(5, False, False)
-        
+
     with pytest.raises(ValueError):
-        KFoldDataModule(5, False, False, train_dataloader, datamodule)
-        
+        KFoldDataModule(5, False, False, train_dataloader=train_dataloader, datamodule=datamodule)
+
     datamodule = KFoldDataModule(5, False, train_dataloader=train_dataloader)
     assert datamodule.datamodule.train_dataloader() == train_dataloader
-    
+
     datamodule = KFoldDataModule(5, False, datamodule=datamodule)
     assert datamodule.datamodule == datamodule
 
 
 def test_getting_stats():
     train_dataloader = DataLoader(RandomDataset(32, 64))
-    
+
     datamodule = KFoldDataModule(5, False, False, train_dataloader=train_dataloader)
     datamodule.setup_folds()
 
@@ -33,12 +35,13 @@ def test_getting_stats():
 
     assert train_dataloader.batch_size == new_train_dataloader.batch_size
 
+
 @pytest.mark.parametrize("num_folds", [2, 5, 10])
 @pytest.mark.parametrize("shuffle", [True, False])
-@pytest.mark.parametrize("data, dtype", [
-    (DataLoader(RandomDataset(32, 64)), "train_dataloader"), 
-    (BoringDataModule(), "datamodule")
-])
+@pytest.mark.parametrize(
+    "data, dtype",
+    [(DataLoader(RandomDataset(32, 64)), "train_dataloader"), (BoringDataModule(), "datamodule")],
+)
 def test_getting_folds(num_folds, shuffle, data, dtype):
     kwargs = {dtype: data}
     datamodule = KFoldDataModule(num_folds, shuffle, False, **kwargs)
@@ -63,12 +66,15 @@ def test_getting_folds(num_folds, shuffle, data, dtype):
             assert td not in test_data
 
 
-@pytest.mark.parametrize("data, dtype, add_labels", [
-    (DataLoader(RandomLabelDataset(32, 64)), "train_dataloader", False), 
-    (BoringDataModule(with_labels=True), "datamodule", False),
-    (DataLoader(RandomDataset(32, 64)), "train_dataloader", True), 
-    (BoringDataModule(with_labels=False), "datamodule", True)
-])
+@pytest.mark.parametrize(
+    "data, dtype, add_labels",
+    [
+        (DataLoader(RandomLabelDataset(32, 64)), "train_dataloader", False),
+        (BoringDataModule(with_labels=True), "datamodule", False),
+        (DataLoader(RandomDataset(32, 64)), "train_dataloader", True),
+        (BoringDataModule(with_labels=False), "datamodule", True),
+    ],
+)
 def test_stratified(data, dtype, add_labels):
     kwargs = {dtype: data}
     stratified = KFoldDataModule(num_folds=5, shuffle=False, stratified=True, **kwargs)
@@ -78,11 +84,12 @@ def test_stratified(data, dtype, add_labels):
         dm.prepare_data()
         dm.setup()
 
-    # if we add the labels attribute to our dataset we should still 
+    # if we add the labels attribute to our dataset we should still
     # be able to do stratified splitting
     if add_labels:
-        stratified.datamodule.train_dataloader().dataset.labels = \
-            torch.randint(2, (len(stratified.datamodule.train_dataloader().dataset),))
+        stratified.datamodule.train_dataloader().dataset.labels = torch.randint(
+            2, (len(stratified.datamodule.train_dataloader().dataset),)
+        )
 
     for dm in [stratified, not_stratified]:
         dm.setup_folds()
@@ -97,7 +104,7 @@ def test_custom_stratified_label_extractor(custom):
     stratified = KFoldDataModule(stratified=True, train_dataloader=train_dataloader)
     if custom:
         stratified.label_extractor = lambda batch: batch["b"]
-    
+
     stratified.prepare_data()
     stratified.setup()
 
@@ -110,10 +117,13 @@ def test_custom_stratified_label_extractor(custom):
             stratified.setup_folds()
 
 
-@pytest.mark.parametrize("data, dtype", [
-    (DataLoader(RandomDataset(32, 64)), "train_dataloader"), 
-    (BoringDataModule(with_labels=False), "datamodule")
-])
+@pytest.mark.parametrize(
+    "data, dtype",
+    [
+        (DataLoader(RandomDataset(32, 64)), "train_dataloader"),
+        (BoringDataModule(with_labels=False), "datamodule"),
+    ],
+)
 def test_error_stratified(data, dtype):
     kwargs = {dtype: data}
     stratified = KFoldDataModule(num_folds=5, shuffle=False, stratified=True, **kwargs)

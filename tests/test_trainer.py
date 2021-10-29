@@ -1,6 +1,7 @@
-from pl_cross.trainer import Trainer, KFoldLoop
-
 import pytest
+
+from pl_cross.trainer import KFoldLoop, Trainer
+
 
 def test_trainer_initialization():
     with pytest.raises(ValueError):

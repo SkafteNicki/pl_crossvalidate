@@ -1,11 +1,10 @@
-# from 
+# from
 # https://github.com/PyTorchLightning/pytorch-lightning/blob/master/tests/helpers/boring_model.py
 from typing import Optional
 
 import torch
-from torch.utils.data import DataLoader, Dataset, IterableDataset, Subset
-
 from pytorch_lightning import LightningDataModule, LightningModule
+from torch.utils.data import DataLoader, Dataset, IterableDataset, Subset
 
 
 class RandomDictDataset(Dataset):
@@ -148,7 +147,6 @@ class BoringModel(LightningModule):
 
     def predict_dataloader(self):
         return DataLoader(RandomDataset(32, 64))
-
 
 
 class BoringDataModule(LightningDataModule):

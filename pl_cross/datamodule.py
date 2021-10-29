@@ -1,19 +1,26 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import List, Optional, Union
+
 import torch
-from sklearn.model_selection import KFold, StratifiedKFold
-from torch.utils.data import Dataset, DataLoader, Subset
 from pytorch_lightning import LightningDataModule
+from sklearn.model_selection import KFold, StratifiedKFold
+from torch.utils.data import DataLoader, Dataset, Subset
 
 
-class TrainDataLoaderWrapper(LightningDataModule):
-    def __init__(self, train_dataloader: DataLoader) -> None:
+class DataloaderToDataModule(LightningDataModule):
+    def __init__(
+        self, train_dataloader: DataLoader, val_dataloaders: Union[DataLoader, List[DataLoader]]
+    ) -> None:
         super().__init__()
         self._train_dataloader = train_dataloader
-        
+        self._val_dataloaders = val_dataloaders
+
     def train_dataloader(self) -> DataLoader:
         return self._train_dataloader
+
+    def val_dataloader(self) -> Union[DataLoader, List[DataLoader]]:
+        return self._val_dataloaders
 
 
 class BaseKFoldDataModule(LightningDataModule, ABC):
@@ -24,33 +31,35 @@ class BaseKFoldDataModule(LightningDataModule, ABC):
 
     @abstractmethod
     def setup_fold_index(self, fold_index: int) -> None:
-        """ 
+        """
         Given a fold index, implement how the train and validation
         dataset/dataloader should look for the current fold
         """
         pass
-    
-@dataclass    
+
+
+@dataclass
 class KFoldDataModule(BaseKFoldDataModule):
     train_fold: Optional[Dataset] = None
     test_fold: Optional[Dataset] = None
-    
+
     def __init__(
-        self, 
+        self,
         num_folds: int = 5,
         shuffle: bool = False,
         stratified: bool = False,
         train_dataloader: Optional[DataLoader] = None,
-        datamodule: Optional[LightningDataModule] = None
+        val_dataloaders: Optional[Union[DataLoader, List[DataLoader]]] = None,
+        datamodule: Optional[LightningDataModule] = None,
     ) -> None:
         if train_dataloader is None and datamodule is None:
-            raise ValueError('Either `train_dataloader` or `datamodule` argument should be provided')
+            raise ValueError("Either `train_dataloader` or `datamodule` argument should be provided")
         if train_dataloader is not None:
-            self.datamodule = TrainDataLoaderWrapper(train_dataloader)
+            self.datamodule = DataloaderToDataModule(train_dataloader, val_dataloaders)
         if datamodule is not None:
             self.datamodule = datamodule
         if train_dataloader is not None and datamodule is not None:
-            raise ValueError('Only one of `train_dataloader` and `datamodule` argument should be provided')
+            raise ValueError("Only one of `train_dataloader` and `datamodule` argument should be provided")
 
         self.num_folds = num_folds
         self.shuffle = shuffle
@@ -72,24 +81,26 @@ class KFoldDataModule(BaseKFoldDataModule):
                 "timeout": orig_dl.timeout,
                 "worker_init_fn": orig_dl.worker_init_fn,
                 "prefetch_factor": orig_dl.prefetch_factor,
-                "persistent_workers": orig_dl.persistent_workers
+                "persistent_workers": orig_dl.persistent_workers,
             }
         return self._dataloader_stats
-    
+
     def prepare_data(self) -> None:
         self.datamodule.prepare_data()
 
     def setup(self, stage: Optional[str] = None) -> None:
         self.datamodule.setup(stage)
-    
+
     def setup_folds(self) -> None:
         if self.stratified:
             labels = self.get_train_labels(self.datamodule.train_dataloader())
             if labels is None:
-                raise ValueError("Tried to extract labels for stratified K folds but failed."
-                                 " Make sure that the dataset of your train dataloader either"
-                                 " has an attribute `labels` or that `label_extractor` attribute"
-                                 " is initialized correctly")
+                raise ValueError(
+                    "Tried to extract labels for stratified K folds but failed."
+                    " Make sure that the dataset of your train dataloader either"
+                    " has an attribute `labels` or that `label_extractor` attribute"
+                    " is initialized correctly"
+                )
             splitter = StratifiedKFold(self.num_folds, shuffle=self.shuffle)
         else:
             labels = None
@@ -101,10 +112,10 @@ class KFoldDataModule(BaseKFoldDataModule):
         train_indices, test_indices = self.splits[fold_index]
         self.train_fold = Subset(self.train_dataset, train_indices)
         self.test_fold = Subset(self.train_dataset, test_indices)
-    
+
     def train_dataloader(self) -> DataLoader:
         return DataLoader(self.train_fold, **self.dataloader_stats)
-    
+
     def val_dataloader(self) -> DataLoader:
         return self.datamodule.val_dataloader()
 
@@ -114,8 +125,8 @@ class KFoldDataModule(BaseKFoldDataModule):
     def get_train_labels(self, dataloader: DataLoader) -> List:
         if hasattr(dataloader.dataset, "labels"):
             return dataloader.dataset.labels.tolist()
-        
-        labels = [ ]
+
+        labels = []
         for batch in dataloader:
             try:
                 labels.append(self.label_extractor(batch))
@@ -123,5 +134,3 @@ class KFoldDataModule(BaseKFoldDataModule):
                 return None
         labels = torch.cat(labels, dim=0)
         return labels.tolist()
-
-

@@ -37,5 +37,5 @@ if __PL_CROSS__:  # pragma: no cover
     # We are not importing the rest of the package during the build process, as it may not be compiled yet
 else:
     # import modules
-    from .trainer import Trainer
     from .datamodule import BaseKFoldDataModule, KFoldDataModule
+    from .trainer import Trainer

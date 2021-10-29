@@ -1,2 +1,5 @@
 __pycache__
 pl_cross.egg-info/
+MNIST
+lightning_logs
+models
