@@ -8,6 +8,7 @@ from pytorch_lightning.loggers.base import LoggerCollection
 from pytorch_lightning.loops.base import Loop
 from pytorch_lightning.loops.fit_loop import FitLoop
 from pytorch_lightning.trainer.states import TrainerFn
+from pytorch_lightning.utilities import rank_zero_info
 from torch._C import Value
 
 from pl_cross.datamodule import BaseKFoldDataModule
@@ -55,7 +56,7 @@ class KFoldLoop(Loop):
 
     def on_advance_start(self, *args: Any, **kwargs: Any) -> None:
         """ Used to call `setup_fold_index` from the `BaseKFoldDataModule` instance. """
-        _logger.info(f"Starting fold {self.current_fold+1}/{self.num_folds}")
+        rank_zero_info(f"Starting fold {self.current_fold+1}/{self.num_folds}")
         self.trainer.datamodule.setup_fold_index(self.current_fold)
 
         # hijack the _prefix argument of the users logger to correctly log metrics for each fold
@@ -71,7 +72,6 @@ class KFoldLoop(Loop):
         """Used to the run a fitting and testing on the current hold."""
         self._reset_fitting()  # requires to reset the tracking stage.
         self.fit_loop.run()
-        #self.fit_loop.epoch_progress = Progress() 
 
         self._reset_testing()  # requires to reset the tracking stage.
         self.trainer.test_loop.run()

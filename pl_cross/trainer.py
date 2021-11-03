@@ -1,4 +1,5 @@
 from typing import Optional
+from argparse import ArgumentParser
 
 from pytorch_lightning import LightningDataModule, LightningModule
 from pytorch_lightning import Trainer as Trainer_pl
@@ -65,3 +66,14 @@ class Trainer(Trainer_pl):
 
         # restore original fit loop
         self.fit_loop = self.fit_loop.fit_loop
+
+    @classmethod
+    def add_argparse_args(cls, parent_parser: ArgumentParser, **kwargs) -> ArgumentParser:
+        parser = super().add_argparse_args(parent_parser, **kwargs)
+        parser.add_argument('--num_folds', type=int, default=5)
+        parser.add_argument('--shuffle', type=bool, default=False)
+        parser.add_argument('--stratified', type=bool, default=False)
+        return parser
+
+
+
