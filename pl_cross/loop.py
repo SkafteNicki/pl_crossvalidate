@@ -9,7 +9,7 @@ from pytorch_lightning.loops.base import Loop
 from pytorch_lightning.loops.fit_loop import FitLoop
 from pytorch_lightning.trainer.states import TrainerFn
 from pytorch_lightning.utilities import rank_zero_info
-from torch._C import Value
+
 
 from pl_cross.datamodule import BaseKFoldDataModule
 
@@ -56,7 +56,10 @@ class KFoldLoop(Loop):
 
     def on_advance_start(self, *args: Any, **kwargs: Any) -> None:
         """ Used to call `setup_fold_index` from the `BaseKFoldDataModule` instance. """
-        rank_zero_info(f"Starting fold {self.current_fold+1}/{self.num_folds}")
+        
+        rank_zero_info(
+            f"Starting fold {self.current_fold+1}/{self.num_folds} \n"
+        )
         self.trainer.datamodule.setup_fold_index(self.current_fold)
 
         # hijack the _prefix argument of the users logger to correctly log metrics for each fold
@@ -80,7 +83,7 @@ class KFoldLoop(Loop):
     def on_advance_end(self) -> None:
         """Used to save the weights of the current fold and reset the LightningModule and its optimizers."""
         self.trainer.save_checkpoint(osp.join(self.trainer.weights_save_path, f"model_fold{self.current_fold}.pt"))
-        self._callback_metrics.append(self.trainer.callback_metrics)
+        self._callback_metrics.append(deepcopy(self.trainer.callback_metrics))
         # restore the original weights + optimizers and schedulers.
         self.trainer.lightning_module.load_state_dict(self.lightning_module_state_dict)
         self.trainer.accelerator.setup_optimizers(self.trainer)

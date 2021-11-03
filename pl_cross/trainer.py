@@ -1,5 +1,6 @@
 from typing import Optional
 from argparse import ArgumentParser
+from pprint import pprint
 
 from pytorch_lightning import LightningDataModule, LightningModule
 from pytorch_lightning import Trainer as Trainer_pl
@@ -11,8 +12,9 @@ from pl_cross.loop import KFoldLoop
 
 class Trainer(Trainer_pl):
     """
-    Specialized trainer that implements additional methods for easy cross validation
-    in pytorch lightning
+    Specialized trainer that implements additional method for easy cross validation
+    in pytorch lightning. Excepts all arguments that the standard pytorch lightning
+    trainer takes + 3 extra arguments for controlling the cross validation.
 
     Args:
         num_folds: number of folds for cross validation
@@ -43,8 +45,25 @@ class Trainer(Trainer_pl):
         val_dataloaders: Optional[DataLoader] = None,
         datamodule: Optional[LightningDataModule] = None,
     ) -> None:
+        """ Perform K-fold cross validation of a model.
+        
+        Args:
+            model: The model to test.
+
+            train_dataloaders: A instace of :class:`torch.utils.data.DataLoader`
+
+            val_dataloaders: A :class:`torch.utils.data.DataLoader` or a sequence of them specifying validation samples.
+
+            datamodule: An instance of :class:`~pytorch_lightning.core.datamodule.LightningDataModule`.
+        
+        Returns:
+            A dict contraining three keys per logged value: the `raw` value of each fold, the `mean` of the logged value
+            over all the folds and the `std` of the logged values over all the folds
+        
+        """
         # overwrite standard fit loop
         self.fit_loop = KFoldLoop(self.num_folds, self.fit_loop)
+        self.verbose_evaluate = False
 
         # construct K fold datamodule if user is not already passing one in
         cond = (
@@ -66,6 +85,11 @@ class Trainer(Trainer_pl):
 
         # restore original fit loop
         self.fit_loop = self.fit_loop.fit_loop
+        self.verbose_evaluate = True
+        
+        print(self.callback_metrics)
+        
+        return self.callback_metrics
 
     @classmethod
     def add_argparse_args(cls, parent_parser: ArgumentParser, **kwargs) -> ArgumentParser:
