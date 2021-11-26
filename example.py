@@ -2,12 +2,13 @@
 # https://github.com/PyTorchLightning/pytorch-lightning/blob/master/pl_examples/basic_examples/simple_image_classifier.py
 import pytorch_lightning as pl
 import torch
+from torch.functional import Tensor
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets import MNIST
 
-from pl_cross import Trainer
+from pl_cross import Trainer, TensorboardLogger, CSVLogger
 
 
 class LitClassifier(pl.LightningModule):
@@ -60,10 +61,13 @@ if __name__ == "__main__":
     model = LitClassifier()
 
     # Setup trainer
-    trainer = Trainer(max_epochs=1, default_root_dir='models/')
-
-    # Normal fitting
-    #trainer.fit(model, train_dataloader, val_dataloaders=valid_dataloader)
+    trainer = Trainer(
+        max_epochs=1, 
+        logger=[CSVLogger('models/'), TensorboardLogger('models/')],
+    )
 
     # Do cross validation
     trainer.cross_validate(model, train_dataloader, valid_dataloader)
+    print(trainer.callback_metrics)
+
+    e = trainer.create_ensemble(model)

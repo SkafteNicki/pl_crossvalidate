@@ -1,4 +1,5 @@
-from typing import Optional
+import os.path as osp
+from typing import Optional, List
 from argparse import ArgumentParser
 
 from pytorch_lightning import LightningDataModule, LightningModule
@@ -6,13 +7,14 @@ from pytorch_lightning import Trainer as Trainer_pl
 from torch.utils.data import DataLoader
 
 from pl_cross.datamodule import BaseKFoldDataModule, KFoldDataModule
+from pl_cross.ensemble import EnsembleLightningModule
 from pl_cross.loop import KFoldLoop
 
 
 class Trainer(Trainer_pl):
     """
-    Specialized trainer that implements additional methods for easy cross validation
-    in pytorch lightning
+    Specialized trainer that implements two additional methods for easy cross validation
+    in pytorch lightning. A
 
     Args:
         num_folds: number of folds for cross validation
@@ -34,6 +36,9 @@ class Trainer(Trainer_pl):
         if not isinstance(stratified, bool):
             raise ValueError("Expected argument `stratified` to be an boolean")
         self.stratified = stratified
+        self._cross_validation_called = False
+
+        # Intialize rest of the trainer
         super().__init__(*args, **kwargs)
 
     def cross_validate(
@@ -43,6 +48,14 @@ class Trainer(Trainer_pl):
         val_dataloaders: Optional[DataLoader] = None,
         datamodule: Optional[LightningDataModule] = None,
     ) -> None:
+        """ K fold cross validation
+
+        Args:
+            model: Model to cross validate.
+            train_dataloaders: A instance of :class:`torch.utils.data.DataLoader`
+            val_dataloaders: A instance of :class:`torch.utils.data.DataLoader`
+            datamodule: An instance of :class:`~pytorch_lightning.core.datamodule.LightningDataModule`.      
+        """
         # overwrite standard fit loop
         self.fit_loop = KFoldLoop(self.num_folds, self.fit_loop)
 
@@ -64,11 +77,47 @@ class Trainer(Trainer_pl):
 
         self.fit(model, datamodule=datamodule)
 
+        # store list of checkpoints for later use
+        self.ensemble_checkpoint_paths = [
+            osp.join(self.weights_save_path, f"model_fold{f_idx}.pt") for f_idx in range(self.num_folds)
+        ]
+
         # restore original fit loop
         self.fit_loop = self.fit_loop.fit_loop
+        self._cross_validation_called = True
+
+    def create_ensemble(
+        self,
+        model: LightningModule,
+        ckpt_paths: Optional[List[str]] = None
+    ) -> LightningModule:
+        """ Create an ensemble from trained models  
+        
+        Args:
+            model: An instance of the model to create an ensemble over.
+            ckpt_paths: If not provided, then it assumes that `cross_validate` have been already called
+                and will automatically load the model checkpoints saved during that process. Else expect
+                it to be a list of checkpoint paths to individual models.
+        
+        Example:
+            >>> trainer = Trainer()
+            >>> trainer.cross_validate(model, datamodule)
+            >>> ensemble_model = trainer.create_ensemble(model)
+
+        """
+        if ckpt_paths is None:
+            if self._cross_validation_called:
+                ckpt_paths = self.ensemble_checkpoint_paths
+            else:
+                raise ValueError(
+                    "Cannot construct ensemble model. Either call `cross_validate`"
+                    "beforehand or pass in a list of ckeckpoint paths in the `ckpt_paths` argument"
+                )
+        return EnsembleLightningModule(model, ckpt_paths)
 
     @classmethod
     def add_argparse_args(cls, parent_parser: ArgumentParser, **kwargs) -> ArgumentParser:
+        """ Alter the argparser to also include the new arguments """ 
         parser = super().add_argparse_args(parent_parser, **kwargs)
         parser.add_argument('--num_folds', type=int, default=5)
         parser.add_argument('--shuffle', type=bool, default=False)
