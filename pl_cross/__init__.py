@@ -38,6 +38,7 @@ if __PL_CROSS__:  # pragma: no cover
 else:
     # import modules
     from .datamodule import BaseKFoldDataModule, KFoldDataModule
+    from .ensemble import EnsembleLightningModule
     from .loggers import TensorboardLogger, CSVLogger
     from .trainer import Trainer
     

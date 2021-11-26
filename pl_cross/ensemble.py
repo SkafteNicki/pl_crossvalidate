@@ -50,7 +50,7 @@ class EnsembleLightningModule(LightningModule):
         @functools.wraps(fn)
         def wrapped_func(*args: Any, **kwargs: Any) -> Optional[Any]:
             val = [getattr(m, fn.__name__)(*args, **kwargs) for m in self.models]
-            if isinstance(val, Tensor):
+            if isinstance(val[0], Tensor):
                 val = torch.stack(val)
             return val
 

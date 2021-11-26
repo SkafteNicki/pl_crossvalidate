@@ -3,5 +3,5 @@ pl_cross.egg-info/
 MNIST
 lightning_logs
 models
-*.pt
 *.ckpt
+.coverage

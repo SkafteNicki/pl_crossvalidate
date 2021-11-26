@@ -4,6 +4,7 @@ from pl_cross.trainer import KFoldLoop, Trainer
 
 
 def test_trainer_initialization():
+    """ Test additional arguments added to trainer """
     with pytest.raises(ValueError):
         Trainer(num_folds=2.5)
 
@@ -15,3 +16,11 @@ def test_trainer_initialization():
 
     with pytest.raises(ValueError):
         Trainer(stratified=2)
+
+
+#def test_cross_validate()
+
+
+
+#@pytest.mark.parametrize()
+#def test_ensemble()
