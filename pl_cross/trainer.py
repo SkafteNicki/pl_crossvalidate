@@ -1,6 +1,7 @@
 import os.path as osp
 from typing import Optional, List
 from argparse import ArgumentParser
+from pprint import pprint
 
 from pytorch_lightning import LightningDataModule, LightningModule
 from pytorch_lightning import Trainer as Trainer_pl
@@ -13,8 +14,9 @@ from pl_cross.loop import KFoldLoop
 
 class Trainer(Trainer_pl):
     """
-    Specialized trainer that implements two additional methods for easy cross validation
-    in pytorch lightning. A
+    Specialized trainer that implements additional method for easy cross validation
+    in pytorch lightning. Excepts all arguments that the standard pytorch lightning
+    trainer takes + 3 extra arguments for controlling the cross validation.
 
     Args:
         num_folds: number of folds for cross validation
@@ -54,10 +56,16 @@ class Trainer(Trainer_pl):
             model: Model to cross validate.
             train_dataloaders: A instance of :class:`torch.utils.data.DataLoader`
             val_dataloaders: A instance of :class:`torch.utils.data.DataLoader`
-            datamodule: An instance of :class:`~pytorch_lightning.core.datamodule.LightningDataModule`.      
+            datamodule: An instance of :class:`~pytorch_lightning.core.datamodule.LightningDataModule`.
+
+        Returns:
+            A dict contraining three keys per logged value: the `raw` value of each fold, the `mean` of the logged value
+            over all the folds and the `std` of the logged values over all the folds
+
         """
         # overwrite standard fit loop
         self.fit_loop = KFoldLoop(self.num_folds, self.fit_loop)
+        self.verbose_evaluate = False
 
         # construct K fold datamodule if user is not already passing one in
         cond = (
@@ -85,6 +93,11 @@ class Trainer(Trainer_pl):
         # restore original fit loop
         self.fit_loop = self.fit_loop.fit_loop
         self._cross_validation_called = True
+        self.verbose_evaluate = True
+        
+        print(self.callback_metrics)
+        
+        return self.callback_metrics
 
     def create_ensemble(
         self,
@@ -114,6 +127,7 @@ class Trainer(Trainer_pl):
                     "beforehand or pass in a list of ckeckpoint paths in the `ckpt_paths` argument"
                 )
         return EnsembleLightningModule(model, ckpt_paths)
+
 
     @classmethod
     def add_argparse_args(cls, parent_parser: ArgumentParser, **kwargs) -> ArgumentParser:

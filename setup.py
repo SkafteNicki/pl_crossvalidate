@@ -48,7 +48,7 @@ setup(
     author_email=pl_cross.__author_email__,
     license=pl_cross.__license__,
     packages=find_packages(exclude=["tests", "tests/*"]),
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     install_requires=requirements,
     download_url="https://github.com/SkafteNicki/pl_cross/archive/0.1.0.zip",
     classifiers=[

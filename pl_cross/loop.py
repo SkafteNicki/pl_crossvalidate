@@ -9,7 +9,7 @@ from pytorch_lightning.loops.base import Loop
 from pytorch_lightning.loops.fit_loop import FitLoop
 from pytorch_lightning.trainer.states import TrainerFn
 from pytorch_lightning.utilities import rank_zero_info
-from torch._C import Value
+
 
 from pl_cross.datamodule import BaseKFoldDataModule
 
@@ -52,7 +52,6 @@ class KFoldLoop(Loop):
             )
         # Setup the datasets for this fold
         self.trainer.datamodule.setup_folds()
-        self.trainer.verbose_evaluate = False
 
         # Make a copy of the initial state of the model
         self.lightning_module_state_dict = deepcopy(self.trainer.lightning_module.state_dict())
