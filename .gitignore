@@ -5,3 +5,5 @@ lightning_logs
 models
 *.ckpt
 .coverage
+*.pt
+!tests/*.pt
