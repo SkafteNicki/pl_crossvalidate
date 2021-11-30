@@ -23,6 +23,7 @@ def test_init_with_correct_model_class():
 
 
 def test_callable_methods():
+    """ Check that methods from base model can be called from ensemble """
     model = LitClassifier()
     emodel = EnsembleLightningModule(model, _paths)
     for m in emodel.models:

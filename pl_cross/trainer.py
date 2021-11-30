@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 from pprint import pprint
 
 from pytorch_lightning import LightningDataModule, LightningModule
+from pytorch_lightning.utilities.model_helpers import is_overridden
 from pytorch_lightning import Trainer as Trainer_pl
 from torch.utils.data import DataLoader
 
@@ -63,6 +64,9 @@ class Trainer(Trainer_pl):
             over all the folds and the `std` of the logged values over all the folds
 
         """
+        if not is_overridden("test_step", model):
+            raise ValueError('`cross_validation` method requires you to also define a `test_step` method.')
+
         # overwrite standard fit loop
         self.fit_loop = KFoldLoop(self.num_folds, self.fit_loop)
         self.verbose_evaluate = False
