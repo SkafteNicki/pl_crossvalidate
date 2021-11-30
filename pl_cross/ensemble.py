@@ -8,7 +8,7 @@ from torch import nn, Tensor
 
 
 class EnsembleLightningModule(LightningModule):
-    """ EnsembleLightningModule can be used to constuct an ensemble
+    """EnsembleLightningModule can be used to constuct an ensemble
     from a collection of models. Under the hood we wrap every public method defined in the
     model to return the output from all models in the ensemble. If the output is a tensor,
     we stack them before returning.
@@ -26,18 +26,17 @@ class EnsembleLightningModule(LightningModule):
         [output_from_model1, output_from_model2]
 
     """
+
     exclude = [
-        'extra_repr',
-        'loaded_optimizer_states_dict',  # TODO: remove when pl==1.7.0
-        'model_size'  # TODO: remove when pl==1.7.0
+        "extra_repr",
+        "loaded_optimizer_states_dict",  # TODO: remove when pl==1.7.0
+        "model_size",  # TODO: remove when pl==1.7.0
     ]
 
     def __init__(self, model: LightningModule, ckpt_paths: List[str]) -> None:
         super().__init__()
         model_cls = type(model)
-        self.models = nn.ModuleList(
-            [model_cls.load_from_checkpoint(p) for p in ckpt_paths]
-        )
+        self.models = nn.ModuleList([model_cls.load_from_checkpoint(p) for p in ckpt_paths])
 
         for attr in inspect.getmembers(model, inspect.ismethod):
             attr_name = attr[0]
@@ -45,9 +44,10 @@ class EnsembleLightningModule(LightningModule):
                 setattr(self, attr_name, self.wrap_callables(getattr(self, attr_name)))
 
     def wrap_callables(self, fn: Callable) -> Callable:
-        """ Decorato to wrap a function method to return the collected output from 
+        """Decorato to wrap a function method to return the collected output from
         all models in the ensemble.
         """
+
         @functools.wraps(fn)
         def wrapped_func(*args: Any, **kwargs: Any) -> Optional[Any]:
             val = [getattr(m, fn.__name__)(*args, **kwargs) for m in self.models]

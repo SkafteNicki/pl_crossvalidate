@@ -1,20 +1,23 @@
 import pytest
-from pytorch_lightning.accelerators import accelerator
 
-from pl_cross import datamodule
-from pl_cross.trainer import EnsembleLightningModule, KFoldLoop, Trainer
+from pl_cross.trainer import EnsembleLightningModule, Trainer
 
 from .boring_model import BoringDataModule, BoringModel, LitClassifier
 
 _paths = [f"tests/ensemble_weights/model_fold{i}.pt" for i in range(5)]
 _n_ensemble = len(_paths)
 
+
 def test_trainer_initialization():
     """ Test additional arguments added to trainer """
-    with pytest.raises(ValueError, match="Expected argument `num_folds` to be an integer larger than or equal to 2"):
+    with pytest.raises(
+        ValueError, match="Expected argument `num_folds` to be an integer larger than or equal to 2"
+    ):
         Trainer(num_folds=2.5)
 
-    with pytest.raises(ValueError, match="Expected argument `num_folds` to be an integer larger than or equal to 2"):
+    with pytest.raises(
+        ValueError, match="Expected argument `num_folds` to be an integer larger than or equal to 2"
+    ):
         Trainer(num_folds=1)
 
     with pytest.raises(ValueError, match="Expected argument `shuffle` to be an boolean"):
@@ -54,5 +57,5 @@ def test_ensemble_error():
     """ make sure that error is raised if we cannot create an ensemble """
     trainer = Trainer(num_folds=_n_ensemble)
     model = LitClassifier()
-    with pytest.raises(ValueError, match='Cannot construct.*'):
+    with pytest.raises(ValueError, match="Cannot construct.*"):
         trainer.create_ensemble(model)

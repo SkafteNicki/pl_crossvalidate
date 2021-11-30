@@ -64,13 +64,13 @@ if __name__ == "__main__":
     model = LitClassifier()
 
     # Setup logger with adjusted join character
-    logger = pl.loggers.TensorBoardLogger('models/')
-    logger.LOGGER_JOIN_CHAR = '/'
+    logger = pl.loggers.TensorBoardLogger("models/")
+    logger.LOGGER_JOIN_CHAR = "/"
 
     # Setup trainer
     trainer = Trainer(
-        max_epochs=1, 
-        logger=[CSVLogger('models/'), TensorboardLogger('models/')],
+        max_epochs=1,
+        logger=[CSVLogger("models/"), TensorboardLogger("models/")],
     )
 
     # Do cross validation

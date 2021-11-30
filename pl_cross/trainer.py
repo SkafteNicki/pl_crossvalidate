@@ -51,7 +51,7 @@ class Trainer(Trainer_pl):
         val_dataloaders: Optional[DataLoader] = None,
         datamodule: Optional[LightningDataModule] = None,
     ) -> None:
-        """ K fold cross validation
+        """K fold cross validation
 
         Args:
             model: Model to cross validate.
@@ -60,12 +60,13 @@ class Trainer(Trainer_pl):
             datamodule: An instance of :class:`~pytorch_lightning.core.datamodule.LightningDataModule`.
 
         Returns:
-            A dict contraining three keys per logged value: the `raw` value of each fold, the `mean` of the logged value
-            over all the folds and the `std` of the logged values over all the folds
+            A dict contraining three keys per logged value: the `raw` value of each fold,
+            the `mean` of the logged value over all the folds and the `std` of the
+            logged values over all the folds
 
         """
         if not is_overridden("test_step", model):
-            raise ValueError('`cross_validation` method requires you to also define a `test_step` method.')
+            raise ValueError("`cross_validation` method requires you to also define a `test_step` method.")
 
         # overwrite standard fit loop
         self.fit_loop = KFoldLoop(self.num_folds, self.fit_loop)
@@ -98,24 +99,22 @@ class Trainer(Trainer_pl):
         self.fit_loop = self.fit_loop.fit_loop
         self._cross_validation_called = True
         self.verbose_evaluate = True
-        
+
         print(self.callback_metrics)
-        
+
         return self.callback_metrics
 
     def create_ensemble(
-        self,
-        model: LightningModule,
-        ckpt_paths: Optional[List[str]] = None
+        self, model: LightningModule, ckpt_paths: Optional[List[str]] = None
     ) -> LightningModule:
-        """ Create an ensemble from trained models  
-        
+        """Create an ensemble from trained models
+
         Args:
             model: An instance of the model to create an ensemble over.
             ckpt_paths: If not provided, then it assumes that `cross_validate` have been already called
                 and will automatically load the model checkpoints saved during that process. Else expect
                 it to be a list of checkpoint paths to individual models.
-        
+
         Example:
             >>> trainer = Trainer()
             >>> trainer.cross_validate(model, datamodule)
@@ -132,15 +131,11 @@ class Trainer(Trainer_pl):
                 )
         return EnsembleLightningModule(model, ckpt_paths)
 
-
     @classmethod
     def add_argparse_args(cls, parent_parser: ArgumentParser, **kwargs) -> ArgumentParser:
-        """ Alter the argparser to also include the new arguments """ 
+        """ Alter the argparser to also include the new arguments """
         parser = super().add_argparse_args(parent_parser, **kwargs)
-        parser.add_argument('--num_folds', type=int, default=5)
-        parser.add_argument('--shuffle', type=bool, default=False)
-        parser.add_argument('--stratified', type=bool, default=False)
+        parser.add_argument("--num_folds", type=int, default=5)
+        parser.add_argument("--shuffle", type=bool, default=False)
+        parser.add_argument("--stratified", type=bool, default=False)
         return parser
-
-
-
