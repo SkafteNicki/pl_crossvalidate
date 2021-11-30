@@ -1,6 +1,6 @@
 import pytest
-
 import torch
+
 from pl_cross.trainer import EnsembleLightningModule, Trainer
 
 from .boring_model import BoringDataModule, BoringModel, LitClassifier
