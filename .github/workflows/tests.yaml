@@ -22,13 +22,12 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install -r requirements_tests.txt
+        pip install -r tests/requirements_tests.txt
     - name: Install package
       run: |
         python setup.py install sdist bdist_wheel
         twine check dist/*
     - name: Test with pytest
       run: |
-        pip install pytest coverage
         coverage run -m pytest -v
         coverage report -m
