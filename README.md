@@ -44,32 +44,35 @@ The core functionality of machine learning algorithms is that they are able to *
 it requires us to define what *well* means. One interpretation of this question is an algorithms ability to *generalize* e.g. a model that generalizes well have actually learned something meaningfull. 
 
 The mathematical definition of the generalization error/expected loss/risk is given by
+<p align="center">
+<img src="https://render.githubusercontent.com/render/math?math=I[{\color{blue}f}] = \int_{X \times Y} {\color{green}V}({\color{blue}f}(x), y) {\color{red}p}(x, y) dx dy">
+</p>
 
-$$  I[{\color{blue}f}] = \int_{X \times Y} {\color{green}V}({\color{blue}f}(x), y) {\color{red}p}(x, y) dx dy $$
-
-where ${\color{blue}f}$ is some function ${\color{blue}f}: X \rightarrow Y$, ${\color{green}V}$ denotes the loss function and ${\color{red}p}(x,y)$ is the joint probability distribution between $x$ and $y$. This is the theoretical error an algorithm will do on some unobserved dataset. The problem with this definition is that we cannot compute it, due to ${\color{red}p}$ being unknown and even if we knew it the integral is intractable. The best we therefore can do is an *approximation* of the generalization error:
-
-$$ I_{\color{cyan}n}[{\color{blue}f}] = \frac{1}{{\color{cyan}n}} \sum_{i=1}^{{\color{cyan}n}} {\color{green}V}({\color{blue}f}(x_i), y_i) $$
-
-which measures the error that our function ${\color{blue}f}$ does on ${\color{cyan}n}$ datapoints measured by loss function ${\color{green}V}$. This function we can compute (just think of this as your normal loss function) and we even know that
-
-$$ \lim_{n \rightarrow \infty} I[{\color{blue}f}] - I_{\color{cyan}n}[{\color{blue}f}] = 0 $$
-
-Namely that approximation of the generalization error will become the true generalization error if we just evaluate it on enough data. But how does all this related to cross-validation you may ask? The problem with the above is that ${\color{blue}f}$ is not a fixed function, but data-dependent function i.e. ${\color{blue}f_{\color{magenta}m}}$. Thus, the above approximation will only converge if $\color{cyan}n$ and $\color{magenta}m$ refers to different sets of data points. This is where cross-validation strategies comes into play. 
+where <img src="https://render.githubusercontent.com/render/math?math={\color{blue}f}"> is some function <img src="https://render.githubusercontent.com/render/math?math={\color{blue}f}: X \rightarrow Y, {\color{green}V}"> denotes the loss function and <img src="https://render.githubusercontent.com/render/math?math={\color{red}p}(x,y)"> is the joint probability distribution between <img src="https://render.githubusercontent.com/render/math?math=x"> and <img src="https://render.githubusercontent.com/render/math?math=y">. This is the theoretical error an algorithm will do on some unobserved dataset. The problem with this definition is that we cannot compute it, due to <img src="https://render.githubusercontent.com/render/math?math={\color{red}p}"> being unknown and even if we knew it the integral is intractable. The best we therefore can do is an *approximation* of the generalization error:
 
 <p align="center">
-  <img src="crossval_types.jpg" width="700" title="All credit to https://www.researchgate.net/figure/Figura-44-Hold-out-y-K-fold-cross-validation-5_fig1_334119803">
+<img src="https://render.githubusercontent.com/render/math?math=I_{\color{cyan}n}[{\color{blue}f}] = \frac{1}{{\color{cyan}n}} \sum_{i=1}^{{\color{cyan}n}} {\color{green}V}({\color{blue}f}(x_i), y_i)">
 </p>
+
+which measures the error that our function <img src="https://render.githubusercontent.com/render/math?math={\color{blue}f}"> does on <img src="https://render.githubusercontent.com/render/math?math={\color{cyan}n}"> datapoints measured by loss function <img src="https://render.githubusercontent.com/render/math?math={\color{green}V}">. This function we can compute (just think of this as your normal loss function) and we even know that
+
+<p align="center">
+<img src="https://render.githubusercontent.com/render/math?math=\lim_{n \rightarrow \infty} I[{\color{blue}f}] - I_{\color{cyan}n}[{\color{blue}f}] = 0">
+</p>
+
+Namely that approximation of the generalization error will become the true generalization error if we just evaluate it on enough data. But how does all this related to cross-validation you may ask? The problem with the above is that <img src="https://render.githubusercontent.com/render/math?math={\color{blue}f}"> is not a fixed function, but data-dependent function i.e. <img src="https://render.githubusercontent.com/render/math?math={\color{blue}f_{\color{magenta}m}}">. Thus, the above approximation will only converge if <img src="https://render.githubusercontent.com/render/math?math=\color{cyan}n"> and <img src="https://render.githubusercontent.com/render/math?math=\color{magenta}m"> refers to different sets of data points. This is where cross-validation strategies comes into play. 
+
+<img src="crossval_types.jpg" width="700" title="All credit to https://www.researchgate.net/figure/Figura-44-Hold-out-y-K-fold-cross-validation-5_fig1_334119803">
 
 <center>
 
 | Hold out | K-fold |
 |----------|--------|
-| $ I[{\color{blue}f_{\color{magenta}m}}] \approx I_{\mathcal{D}_{test}}[{\color{blue}f_{\color{magenta}m}}] \quad \quad \quad \quad $ | $I[{\color{blue}f_{\color{magenta}m}}] \approx \sum_{k=1}^K \dfrac{\|\mathcal{D}_k\|}{N} I_{\mathcal{D}_k}[{\color{blue}f_{\color{magenta}m}}] $
+| <img src="https://render.githubusercontent.com/render/math?math=I[{\color{blue}f_{\color{magenta}m}}] \approx I_{\mathcal{D}_{test}}[{\color{blue}f_{\color{magenta}m}}] \quad \quad \quad \quad"> | <img src="https://render.githubusercontent.com/render/math?math=I[{\color{blue}f_{\color{magenta}m}}] \approx \sum_{k=1}^K \dfrac{\|\mathcal{D}_k\|}{N} I_{\mathcal{D}_k}[{\color{blue}f_{\color{magenta}m}}]">
 
 </center>
 
-In general we consider two viable strategies for selecting the $\color{cyan}n$ (validation) and $\color{magenta}m$ (training) set: hold-out validation and K-fold cross validation. In hold out we create a separate independent set of data to evaluate our training on. This is easily done in native pytorch-lightning by implementing the `validation_step` method. For K-fold we cut our data into K equally large chunks and then we iteratively train on K-1 folds and evaluate on the remaining 1 fold, repeating this K times. In general K-fold gives a better approximation of the generalization error than hold-out, but at the expense of requiring you to train K models. 
+In general we consider two viable strategies for selecting the <img src="https://render.githubusercontent.com/render/math?math=\color{cyan}n"> (validation) and <img src="https://render.githubusercontent.com/render/math?math=\color{magenta}m"> (training) set: hold-out validation and K-fold cross validation. In hold out we create a separate independent set of data to evaluate our training on. This is easily done in native pytorch-lightning by implementing the `validation_step` method. For K-fold we cut our data into K equally large chunks and then we iteratively train on K-1 folds and evaluate on the remaining 1 fold, repeating this K times. In general K-fold gives a better approximation of the generalization error than hold-out, but at the expense of requiring you to train K models. 
 
 ## Some notes
 
