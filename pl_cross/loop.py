@@ -1,15 +1,14 @@
+import logging
 import os.path as osp
 from copy import deepcopy
 from typing import Any, Dict
 
-import logging
 import torch
-from pytorch_lightning.loggers.base import LoggerCollection, LightningLoggerBase
+from pytorch_lightning.loggers.base import LightningLoggerBase, LoggerCollection
 from pytorch_lightning.loops.base import Loop
 from pytorch_lightning.loops.fit_loop import FitLoop
 from pytorch_lightning.trainer.states import TrainerFn
 from pytorch_lightning.utilities import rank_zero_info
-
 
 from pl_cross.datamodule import BaseKFoldDataModule
 

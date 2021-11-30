@@ -1,9 +1,10 @@
-from pytorch_lightning import LightningModule
-import torch
-from torch import nn, Tensor
-from typing import List, Any, Optional, Callable
 import functools
 import inspect
+from typing import Any, Callable, List, Optional
+
+import torch
+from pytorch_lightning import LightningModule
+from torch import nn, Tensor
 
 
 class EnsembleLightningModule(LightningModule):

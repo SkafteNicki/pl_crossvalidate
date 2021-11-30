@@ -2,8 +2,10 @@
 import pytest
 import torch
 from torch import Tensor
-from .boring_model import BoringModel, LitClassifier
+
 from pl_cross import EnsembleLightningModule
+
+from .boring_model import BoringModel, LitClassifier
 
 _paths = [f"tests/ensemble_weights/model_fold{i}.pt" for i in range(5)]
 _n_ensemble = len(_paths)

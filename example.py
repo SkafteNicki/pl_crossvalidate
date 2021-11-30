@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets import MNIST
 
-from pl_cross import Trainer, TensorboardLogger, CSVLogger
+from pl_cross import CSVLogger, TensorboardLogger, Trainer
 
 
 class LitClassifier(pl.LightningModule):

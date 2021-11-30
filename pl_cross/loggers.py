@@ -1,5 +1,6 @@
 from pytorch_lightning import loggers as pl_loggers
 
+
 class KFoldLogger:
     def setup(self):
         """ Additional setup code to inject during __init__ """

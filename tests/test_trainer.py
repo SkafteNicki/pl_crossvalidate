@@ -2,9 +2,9 @@ import pytest
 from pytorch_lightning.accelerators import accelerator
 
 from pl_cross import datamodule
-from .boring_model import LitClassifier, BoringDataModule, BoringModel
-from pl_cross.trainer import KFoldLoop, Trainer, EnsembleLightningModule
+from pl_cross.trainer import EnsembleLightningModule, KFoldLoop, Trainer
 
+from .boring_model import BoringDataModule, BoringModel, LitClassifier
 
 _paths = [f"tests/ensemble_weights/model_fold{i}.pt" for i in range(5)]
 _n_ensemble = len(_paths)

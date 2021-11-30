@@ -1,11 +1,11 @@
 import os.path as osp
-from typing import Optional, List
 from argparse import ArgumentParser
 from pprint import pprint
+from typing import List, Optional
 
 from pytorch_lightning import LightningDataModule, LightningModule
-from pytorch_lightning.utilities.model_helpers import is_overridden
 from pytorch_lightning import Trainer as Trainer_pl
+from pytorch_lightning.utilities.model_helpers import is_overridden
 from torch.utils.data import DataLoader
 
 from pl_cross.datamodule import BaseKFoldDataModule, KFoldDataModule

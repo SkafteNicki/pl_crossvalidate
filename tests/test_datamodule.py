@@ -4,8 +4,7 @@ from torch.utils.data import DataLoader
 
 from pl_cross import KFoldDataModule
 
-from .boring_model import (BoringDataModule, RandomDataset,
-                           RandomDictLabelDataset, RandomLabelDataset)
+from .boring_model import BoringDataModule, RandomDataset, RandomDictLabelDataset, RandomLabelDataset
 
 
 def test_initialization():
