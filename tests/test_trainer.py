@@ -1,5 +1,6 @@
 import pytest
 
+import torch
 from pl_cross.trainer import EnsembleLightningModule, Trainer
 
 from .boring_model import BoringDataModule, BoringModel, LitClassifier
@@ -30,8 +31,11 @@ def test_trainer_initialization():
 @pytest.mark.parametrize("accelerator", ["cpu", "gpu"])
 def test_cross_validate(accelerator):
     """ test cross validation works """
+    if not torch.cuda.is_available() and torch.cuda.device_count() < 1:
+        pytest.skip("test requires cuda support")
+
     model = BoringModel()
-    datamodule = BoringDataModule()
+    datamodule = BoringDataModule(feature_size=32)
 
     trainer = Trainer(num_folds=2, max_steps=50, accelerator=accelerator, devices=1)
     trainer.cross_validate(model, datamodule=datamodule)
@@ -41,8 +45,8 @@ def test_cross_validate(accelerator):
 def test_ensemble(paths):
     """ test that trainer.ensemble works with and without that paths argument """
     trainer = Trainer(num_folds=_n_ensemble, max_steps=50)
-    model = BoringModel()
-    datamodule = BoringDataModule()
+    model = LitClassifier()
+    datamodule = BoringDataModule(with_labels=True, feature_size=784)
 
     if paths:
         ensemble_model = trainer.create_ensemble(model, paths)

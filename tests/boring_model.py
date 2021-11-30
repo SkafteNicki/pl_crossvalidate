@@ -151,12 +151,13 @@ class BoringModel(LightningModule):
 
 
 class BoringDataModule(LightningDataModule):
-    def __init__(self, with_labels=False):
+    def __init__(self, with_labels=False, feature_size=32):
         self.with_labels = with_labels
+        self.feature_size = feature_size
 
     def prepare_data(self):
         dataclass = RandomLabelDataset if self.with_labels else RandomDataset
-        self.random_full = dataclass(32, 64 * 4)
+        self.random_full = dataclass(self.feature_size, 64 * 4)
 
     def setup(self, stage: Optional[str] = None):
         if stage == "fit" or stage is None:
