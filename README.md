@@ -30,12 +30,11 @@ ensemble_model = trainer.create_ensemble(model)
 
 ```
 
-## Installation
+## Installation (
 
-Requires pytorch-lightning v1.5 or newer and scikit-learn to be installed.
-Simply install with
+Clone and run
 ```bash
-pip install pl_cross
+python setup.py install
 ```
 
 ## Cross-validation: why?
