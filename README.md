@@ -23,7 +23,7 @@ trainer = Trainer(
 )
 
 # Returns a dict of stats over the different splits
-cross_val_stats = trainer.cross_validate(mode, datamodule=datamodule)
+cross_val_stats = trainer.cross_validate(model, datamodule=datamodule)
 
 # Additionally, we can construct an ensemble from the K trained models
 ensemble_model = trainer.create_ensemble(model)
