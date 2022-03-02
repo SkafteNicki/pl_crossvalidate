@@ -1,4 +1,3 @@
-import logging
 import os.path as osp
 from copy import deepcopy
 from typing import Any, Dict
@@ -11,9 +10,6 @@ from pytorch_lightning.trainer.states import TrainerFn
 from pytorch_lightning.utilities import rank_zero_info
 
 from pl_cross.datamodule import BaseKFoldDataModule
-
-_logger = logging.getLogger("pl_cross")
-
 
 class KFoldLoop(Loop):
     """Specialized pytorch lightning loop for doing cross validation
