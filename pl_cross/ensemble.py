@@ -3,8 +3,8 @@ import inspect
 from typing import Any, Callable, List, Optional
 
 import torch
-from pytorch_lightning import LightningModule
-from torch import nn, Tensor
+from lightning.pytorch import LightningModule
+from torch import Tensor, nn
 
 
 class EnsembleLightningModule(LightningModule):
@@ -14,10 +14,12 @@ class EnsembleLightningModule(LightningModule):
     we stack them before returning.
 
     Args:
+    ----
         model: A instance of the model you want to turn into an ensemble
         ckpt_paths: A list of strings with paths to checkpoints for the given
 
     Example:
+    -------
         >>> model = MyLitModel(...)
         >>> ensemble_model = EnsembleLightningModule(
         ...   model, ['ckpt/path/model1.ckpt', 'ckpt/path/model2.ckpt']
@@ -27,21 +29,19 @@ class EnsembleLightningModule(LightningModule):
 
     """
 
-    exclude = [
-        "extra_repr",
-        "loaded_optimizer_states_dict",  # TODO: remove when pl==1.7.0
-        "model_size",  # TODO: remove when pl==1.7.0
-    ]
-
     def __init__(self, model: LightningModule, ckpt_paths: List[str]) -> None:
         super().__init__()
         model_cls = type(model)
         self.models = nn.ModuleList([model_cls.load_from_checkpoint(p) for p in ckpt_paths])
 
+        # We need to set the trainer to something to avoid errors
+        model._trainer = object()
         for attr in inspect.getmembers(model, inspect.ismethod):
             attr_name = attr[0]
-            if not attr_name.startswith("_") and attr_name not in self.exclude:
+            if not attr_name.startswith("_"):
+                print(attr_name)
                 setattr(self, attr_name, self.wrap_callables(getattr(self, attr_name)))
+        model._trainer = None
 
     def wrap_callables(self, fn: Callable) -> Callable:
         """Decorato to wrap a function method to return the collected output from

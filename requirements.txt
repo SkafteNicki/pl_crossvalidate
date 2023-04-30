@@ -1,2 +1,3 @@
-pytorch-lightning>=1.5
+torch>=2.0
+lightning>=2.0
 scikit-learn>=1.0

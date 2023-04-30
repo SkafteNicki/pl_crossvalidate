@@ -1,17 +1,13 @@
-# adjusted version of
-# https://github.com/PyTorchLightning/pytorch-lightning/blob/master/pl_examples/basic_examples/simple_image_classifier.py
-import pytorch_lightning as pl
 import torch
-from torch.functional import Tensor
-from torch.nn import functional as F
+from lightning.pytorch import LightningModule
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets import MNIST
 
-from pl_cross import CSVLogger, TensorboardLogger, Trainer
+from pl_cross import KFoldTrainer
 
 
-class LitClassifier(pl.LightningModule):
+class LitClassifier(LightningModule):
     def __init__(self, hidden_dim: int = 128, learning_rate: float = 0.0001):
         super().__init__()
         self.save_hyperparameters()
@@ -28,7 +24,7 @@ class LitClassifier(pl.LightningModule):
     def _step(self, batch):
         x, y = batch
         y_hat = self(x)
-        loss = F.cross_entropy(y_hat, y)
+        loss = torch.nn.functional.cross_entropy(y_hat, y)
         return loss, y_hat, y
 
     def training_step(self, batch, batch_idx):
@@ -57,24 +53,15 @@ if __name__ == "__main__":
     dataset_test = MNIST("", train=False, download=True, transform=transforms.ToTensor())
     dataset_train, dataset_valid = random_split(dataset_train, [55000, 5000])
     train_dataloader = DataLoader(dataset_train, batch_size=64)
-    valid_dataloader = DataLoader(dataset_valid, batch_size=64)
+    val_dataloader = DataLoader(dataset_valid, batch_size=64)
     test_dataloader = DataLoader(dataset_test, batch_size=64)
 
     # Setup model
     model = LitClassifier()
 
-    # Setup logger with adjusted join character
-    logger = pl.loggers.TensorBoardLogger("models/")
-    logger.LOGGER_JOIN_CHAR = "/"
-
     # Setup trainer
-    trainer = Trainer(
-        max_epochs=1,
-        logger=[CSVLogger("models/"), TensorboardLogger("models/")],
-    )
+    trainer = KFoldTrainer(max_epochs=1, num_folds=2)
 
-    # Do cross validation
-    trainer.cross_validate(model, train_dataloader, valid_dataloader)
-    print(trainer.callback_metrics)
-
-    e = trainer.create_ensemble(model)
+    # Cross validation
+    output = trainer.cross_validate(model, train_dataloader, val_dataloaders=val_dataloader)
+    print(output)

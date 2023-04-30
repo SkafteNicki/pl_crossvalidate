@@ -1,4 +1,4 @@
-name: "Run tests and coverage"
+name: "Code format checker"
 
 on:
   push:
@@ -26,7 +26,14 @@ jobs:
         pip install .
         pip install .["dev"]
 
-    - name: Test with pytest
+    - name: ruff
       run: |
-        coverage run -m pytest -v
-        coverage report -m
+        ruff .
+
+    - name: black
+      run: |
+        black .
+
+    - name: isort
+      run: |
+        isort .

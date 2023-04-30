@@ -1,59 +1,92 @@
+import numpy as np
 import pytest
 import torch
+from helper import (
+    BoringDataModule,
+    RandomDataset,
+    RandomDictLabelDataset,
+    RandomLabelDataset,
+)
 from torch.utils.data import DataLoader
 
 from pl_cross import KFoldDataModule
 
-from .boring_model import BoringDataModule, RandomDataset, RandomDictLabelDataset, RandomLabelDataset
+train_dataloader = DataLoader(RandomDataset(32, 64))
+datamodule = BoringDataModule()
+
+
+@pytest.mark.parametrize(
+    "input, expected",
+    [
+        ((5, False, False), "Either `train_dataloader` or `datamodule` argument should be provided"),
+        (
+            (5, False, False, train_dataloader, None, datamodule),
+            "Only one of `train_dataloader` and `datamodule` argument should be provided",
+        ),
+        ((1, False, False, train_dataloader), "Number of folds must be a positive integer larger than 2"),
+        (
+            (5, 2, False, train_dataloader),
+            "Shuffle must be a boolean value",
+        ),
+        ((5, False, 2, train_dataloader), "Stratified must be a boolean value"),
+    ],
+)
+def test_initialization_errors(input, expected):
+    """Test that correct errors are raised when initializing KFoldDataModule."""
+    with pytest.raises(ValueError, match=expected):
+        KFoldDataModule(*input)
 
 
 def test_initialization():
-    train_dataloader = DataLoader(RandomDataset(32, 64))
-    datamodule = BoringDataModule()
-
-    with pytest.raises(ValueError):
-        KFoldDataModule(5, False, False)
-
-    with pytest.raises(ValueError):
-        KFoldDataModule(5, False, False, train_dataloader=train_dataloader, datamodule=datamodule)
-
-    datamodule = KFoldDataModule(5, False, train_dataloader=train_dataloader)
+    """Test that the underlying datamodule/loader does not change after init."""
+    datamodule = KFoldDataModule(5, False, train_dataloader=train_dataloader, val_dataloaders=train_dataloader)
     assert datamodule.datamodule.train_dataloader() == train_dataloader
+    assert datamodule.datamodule.val_dataloader() == train_dataloader
+    assert datamodule.val_dataloader() == train_dataloader
 
     datamodule = KFoldDataModule(5, False, datamodule=datamodule)
     assert datamodule.datamodule == datamodule
 
 
 def test_getting_stats():
+    """Test that the underlying attributes of the dataloader are the same as the original dataloader."""
     train_dataloader = DataLoader(RandomDataset(32, 64))
-
     datamodule = KFoldDataModule(5, False, False, train_dataloader=train_dataloader)
-    datamodule.setup_folds()
+    datamodule.setup()
 
     new_train_dataloader = datamodule.train_dataloader()
-
-    assert train_dataloader.batch_size == new_train_dataloader.batch_size
+    for attr in [
+        "batch_size",
+        "num_workers",
+        "collate_fn",
+        "pin_memory",
+        "drop_last",
+        "timeout",
+        "worker_init_fn",
+        "prefetch_factor",
+        "persistent_workers",
+    ]:
+        assert getattr(train_dataloader, attr) == getattr(new_train_dataloader, attr)
 
 
 @pytest.mark.parametrize("num_folds", [2, 5, 10])
 @pytest.mark.parametrize("shuffle", [True, False])
 @pytest.mark.parametrize(
-    "data, dtype",
+    "data, module_type",
     [(DataLoader(RandomDataset(32, 64)), "train_dataloader"), (BoringDataModule(), "datamodule")],
 )
-def test_getting_folds(num_folds, shuffle, data, dtype):
-    kwargs = {dtype: data}
+def test_getting_folds(num_folds, shuffle, data, module_type):
+    kwargs = {module_type: data}
     datamodule = KFoldDataModule(num_folds, shuffle, False, **kwargs)
     datamodule.prepare_data()
     datamodule.setup()
-    datamodule.setup_folds()
 
-    for fold_idx in range(num_folds):
-        datamodule.setup_fold_index(fold_idx)
+    for fold_index in range(num_folds):
+        datamodule.fold_index = fold_index
         train_dl = datamodule.train_dataloader()
         test_dl = datamodule.test_dataloader()
-        assert train_dl
-        assert test_dl
+        assert isinstance(train_dl, DataLoader)
+        assert isinstance(test_dl, DataLoader)
 
         # make sure no element were lost
         train_data = torch.cat([batch for batch in train_dl], dim=0)
@@ -66,7 +99,7 @@ def test_getting_folds(num_folds, shuffle, data, dtype):
 
 
 @pytest.mark.parametrize(
-    "data, dtype, add_labels",
+    "data, module_type, add_labels",
     [
         (DataLoader(RandomLabelDataset(32, 64)), "train_dataloader", False),
         (BoringDataModule(with_labels=True), "datamodule", False),
@@ -74,61 +107,45 @@ def test_getting_folds(num_folds, shuffle, data, dtype):
         (BoringDataModule(with_labels=False), "datamodule", True),
     ],
 )
-def test_stratified(data, dtype, add_labels):
-    kwargs = {dtype: data}
+def test_stratified(data, module_type, add_labels):
+    kwargs = {module_type: data}
     stratified = KFoldDataModule(num_folds=5, shuffle=False, stratified=True, **kwargs)
     not_stratified = KFoldDataModule(num_folds=5, shuffle=False, stratified=False, **kwargs)
-
-    for dm in [stratified, not_stratified]:
-        dm.prepare_data()
-        dm.setup()
 
     # if we add the labels attribute to our dataset we should still
     # be able to do stratified splitting
     if add_labels:
         stratified.datamodule.train_dataloader().dataset.labels = torch.randint(
-            2, (len(stratified.datamodule.train_dataloader().dataset),)
+            3, (len(stratified.datamodule.train_dataloader().dataset),)
         )
 
     for dm in [stratified, not_stratified]:
-        dm.setup_folds()
+        dm.prepare_data()
+        dm.setup()
 
     # make sure that by using stratified splitting, the splits actually change
-    assert stratified.splits != not_stratified
+    equal = True
+    for split1, split2 in zip(stratified.splits, not_stratified.splits, strict=True):
+        equal = equal and np.allclose(split1[0], split2[0])
+        equal = equal and np.allclose(split1[1], split2[1])
+    assert not equal
 
 
 @pytest.mark.parametrize("custom", [False, True])
 def test_custom_stratified_label_extractor(custom):
+    """Test that error is raised if the custom label extractor does not work and that everything work if it does."""
     train_dataloader = DataLoader(RandomDictLabelDataset(32, 64))
     stratified = KFoldDataModule(stratified=True, train_dataloader=train_dataloader)
     if custom:
         stratified.label_extractor = lambda batch: batch["b"]
 
-    stratified.prepare_data()
-    stratified.setup()
-
     if custom:
         # should work
-        stratified.setup_folds()
+        stratified.prepare_data()
+        stratified.setup()
+        assert hasattr(stratified, "splits")
     else:
         with pytest.raises(ValueError, match="Tried to extract labels for .*"):
             # should not work, label extraction should fail
-            stratified.setup_folds()
-
-
-@pytest.mark.parametrize(
-    "data, dtype",
-    [
-        (DataLoader(RandomDataset(32, 64)), "train_dataloader"),
-        (BoringDataModule(with_labels=False), "datamodule"),
-    ],
-)
-def test_error_stratified(data, dtype):
-    kwargs = {dtype: data}
-    stratified = KFoldDataModule(num_folds=5, shuffle=False, stratified=True, **kwargs)
-
-    stratified.prepare_data()
-    stratified.setup()
-
-    with pytest.raises(ValueError):
-        stratified.setup_folds()
+            stratified.prepare_data()
+            stratified.setup()
