@@ -1,19 +1,21 @@
 import pytest
 import torch
-from helper import BoringDataModule, BoringModel, LitClassifier
 from lightning.pytorch import LightningModule
 
 from pl_cross.ensemble import EnsembleLightningModule
 from pl_cross.trainer import KFoldTrainer
 
+from .helper import BoringDataModule, BoringModel, LitClassifier
 
-@pytest.mark.parametrize("arguments, expected",
+
+@pytest.mark.parametrize(
+    "arguments, expected",
     [
         ({"num_folds": 2.5}, "Expected argument `num_folds` to be an integer larger than or equal to 2"),
-        ({"num_folds": 1},"Expected argument `num_folds` to be an integer larger than or equal to 2"),
-        ({"shuffle": 2},"Expected argument `shuffle` to be an boolean"),
-        ({"stratified": 2},"Expected argument `stratified` to be an boolean"),
-    ]
+        ({"num_folds": 1}, "Expected argument `num_folds` to be an integer larger than or equal to 2"),
+        ({"shuffle": 2}, "Expected argument `shuffle` to be an boolean"),
+        ({"stratified": 2}, "Expected argument `stratified` to be an boolean"),
+    ],
 )
 def test_trainer_initialization(arguments, expected):
     """Test additional arguments added to trainer raises error on wrong input."""
@@ -59,10 +61,6 @@ def test_ensemble():
 def test_ensemble_error():
     trainer = KFoldTrainer(num_folds=2, max_steps=50)
     model = LitClassifier()
-    datamodule = BoringDataModule(with_labels=True, feature_size=784)
 
-    with pytest.raises(
-        ValueError,
-        match="Cannot construct ensemble model. Either call `cross_validate`.*"
-    ):
-        ensemble_model = trainer.create_ensemble(model)
+    with pytest.raises(ValueError, match="Cannot construct ensemble model. Either call `cross_validate`.*"):
+        trainer.create_ensemble(model)

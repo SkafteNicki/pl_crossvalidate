@@ -7,13 +7,15 @@ name = "pl_cross"
 authors = [
     {name = "Nicki Skafte Detlefsen", email = "skaftenicki@gmail.com"},
 ]
-description = "Cross validation made easy in Lightning"
 readme = "README.md"
 requires-python = ">=3.10"
+description = "Cross validation made easy in Lightning"
+
+
 dynamic = ["version", "dependencies"]
 
 [project.optional-dependencies]
-dev = ["pytest", "coverage", "ruff", "isort", "black", "mypy"]
+dev = ["pytest", "coverage", "ruff", "isort", "black", "mypy", "pre-commit"]
 
 [tool.setuptools]
 packages = ["pl_cross"]
@@ -33,4 +35,3 @@ line-length = 120
 
 [tool.isort]
 profile = "black"
-

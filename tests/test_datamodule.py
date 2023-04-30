@@ -1,15 +1,16 @@
 import numpy as np
 import pytest
 import torch
-from helper import (
+from torch.utils.data import DataLoader
+
+from pl_cross import KFoldDataModule
+
+from .helper import (
     BoringDataModule,
     RandomDataset,
     RandomDictLabelDataset,
     RandomLabelDataset,
 )
-from torch.utils.data import DataLoader
-
-from pl_cross import KFoldDataModule
 
 train_dataloader = DataLoader(RandomDataset(32, 64))
 datamodule = BoringDataModule()

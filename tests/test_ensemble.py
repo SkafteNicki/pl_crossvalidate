@@ -1,9 +1,10 @@
 import pytest
 import torch
-from helper import BoringDataModule, BoringModel, LitClassifier
 from torch import Tensor
 
 from pl_cross import EnsembleLightningModule, KFoldTrainer
+
+from .helper import BoringDataModule, BoringModel, LitClassifier
 
 
 @pytest.fixture(scope="module")
