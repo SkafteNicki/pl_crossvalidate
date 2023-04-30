@@ -23,7 +23,7 @@ trainer = Trainer(
     stratified=False,  # if splitting should be done in a stratified manner
     accelerator=...,
     callbacks=...,
-  ...
+    ...
 )
 
 # Returns a dict of stats over the different splits
