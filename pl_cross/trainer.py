@@ -12,6 +12,27 @@ from pl_cross.ensemble import EnsembleLightningModule
 
 
 class KFoldTrainer(Trainer):
+    """Trainer for KFold cross validation.
+
+    This trainer is a plug-in replacement for the `Trainer` class from `lightning` package. It does not alter any of
+    the existing functionality, only extends it with the ability to perform KFold cross validation. In total three
+    new public methods are added:
+
+    - `cross_validate`: Performs KFold cross validation on a given model
+    - `create_ensemble`: Creates an ensemble model from a list of trained models
+    - `out_of_sample_score`: Computes the out-of-sample score for a given model
+
+    The two latter of the methods are intended to be called after the `cross_validate` method has been called.
+
+    Args:
+        num_folds: Number of folds
+        shuffle: Whether to shuffle the data before splitting it into folds
+        stratified: Whether to use stratified sampling e.g. for classification we make sure that each fold has the same
+            ratio of samples from each class as the original dataset
+        args: Arguments passed to the underlying lightning `Trainer` class
+        kwargs: Keyword arguments passed to the underlying lightning  `Trainer` class
+    """
+
     def __init__(self, num_folds: int = 5, shuffle: bool = False, stratified: bool = False, *args, **kwargs) -> None:
         # Input validation for the cross validation arguments
         if not isinstance(num_folds, int) or num_folds < 2:
@@ -50,6 +71,18 @@ class KFoldTrainer(Trainer):
         val_dataloaders: Optional[Union[DataLoader, Sequence[DataLoader]]] = None,
         datamodule: Optional[Union[LightningDataModule, KFoldDataModule]] = None,
     ) -> List[Any]:
+        """Performs KFold cross validation on a given model.
+
+        This is the core method added by this class. Given a model and a dataloader / datamodule it will automatically
+        perform KFold cross validation. By automatically we mean that it will automatically construct the different
+        folds and sequentially train and validate the model on each fold, resetting the model weights between each fold.
+
+        Args:
+            model: The model to perform cross validation on
+            train_dataloader: Dataloader with training samples
+            val_dataloaders: Dataloader with validation samples, can be a list of dataloaders for multiple validation
+            datamodule: Lightning datamodule (exclusive with `train_dataloader` and `val_dataloader`)
+        """
         if not is_overridden("test_step", model, LightningModule):
             raise ValueError("`cross_validation` method requires you to also define a `test_step` method.")
 
@@ -127,6 +160,19 @@ class KFoldTrainer(Trainer):
         datamodule: Optional[KFoldDataModule] = None,
         ckpt_paths: Optional[List[str]] = None,
     ) -> LightningModule:
+        """Performs out of sample scoring for a given set of KFold trained models.
+
+        Out of sample scoring for K-fold refer to predicting on the test fold of each K-fold model.
+
+        Args:
+            model: The model to perform cross validation on
+            datamodule: Optionally a ``KFoldDataModule`` instance. If not provided, then it assumes that
+                `cross_validate` have been already called and will automatically use the same ``KFoldDataModule`` use
+                during that process.
+            ckpt_paths: If not provided, then it assumes that `cross_validate` have been already called
+                and will automatically load the model checkpoints saved during that process. Else expect
+                it to be a list of checkpoint paths to individual models.
+        """
         score_method = getattr(model, "score", None)
         if not callable(score_method):
             raise ValueError("`out_of_sample_score` method requires you to also define a `score` method.")

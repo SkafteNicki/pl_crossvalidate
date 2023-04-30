@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import pytest
 import torch
 from lightning.pytorch import LightningModule
@@ -34,6 +36,26 @@ def test_cross_validate(accelerator):
     datamodule = BoringDataModule(feature_size=32)
 
     trainer = KFoldTrainer(num_folds=2, max_steps=50, accelerator=accelerator, devices=1)
+    trainer.cross_validate(model, datamodule=datamodule)
+
+
+def test_cross_validate_gets_correctly_reset_between_runs():
+    """Test that the trainer is correctly reset between runs."""
+
+    class CheckBetweenRuns(BoringModel):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._initial_state = deepcopy(self.state_dict())
+
+        def on_train_start(self):
+            state_dict = self.state_dict()
+            for key in state_dict:
+                assert torch.allclose(state_dict[key], self._initial_state[key])
+
+    model = CheckBetweenRuns()
+    datamodule = BoringDataModule(feature_size=32)
+
+    trainer = KFoldTrainer(num_folds=2, max_steps=50, accelerator="cpu")
     trainer.cross_validate(model, datamodule=datamodule)
 
 
@@ -75,7 +97,7 @@ def test_ensemble(ckpt_paths, request):
 
 
 def test_ensemble_error():
-    """Test that an error is raised if we try to create an ensemble without calling `cross_validate` first"""
+    """Test that an error is raised if we try to create an ensemble without calling `cross_validate` first."""
     trainer = KFoldTrainer(num_folds=2, max_steps=50)
     model = LitClassifier()
 

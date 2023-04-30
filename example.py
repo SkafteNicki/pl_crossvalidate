@@ -8,6 +8,8 @@ from pl_cross import KFoldTrainer
 
 
 class LitClassifier(LightningModule):
+    """Basic MNIST classifier."""
+
     def __init__(self, hidden_dim: int = 128, learning_rate: float = 0.0001):
         super().__init__()
         self.save_hyperparameters()
@@ -16,38 +18,45 @@ class LitClassifier(LightningModule):
         self.l2 = torch.nn.Linear(self.hparams.hidden_dim, 10)
 
     def forward(self, x):
+        """Forward pass."""
         x = x.view(x.size(0), -1)
         x = torch.relu(self.l1(x))
         x = torch.relu(self.l2(x))
         return x
 
     def _step(self, batch):
+        """Shared step function."""
         x, y = batch
         y_hat = self(x)
         loss = torch.nn.functional.cross_entropy(y_hat, y)
         return loss, y_hat, y
 
     def training_step(self, batch, batch_idx):
+        """Training step."""
         loss, y_hat, y = self._step(batch)
         self.log("train_loss", loss)
         self.log("train_acc", (y_hat.argmax(dim=-1) == y).float().mean())
         return loss
 
     def validation_step(self, batch, batch_idx):
+        """Validation step."""
         loss, y_hat, y = self._step(batch)
         self.log("valid_loss", loss)
         self.log("valid_acc", (y_hat.argmax(dim=-1) == y).float().mean())
 
     def test_step(self, batch, batch_idx):
+        """Test step."""
         loss, y_hat, y = self._step(batch)
         self.log("test_loss", loss)
         self.log("test_acc", (y_hat.argmax(dim=-1) == y).float().mean())
 
     def score(self, batch, batch_idx):
+        """Specialized score function that is used to calculate out of sample predictions."""
         x, y = batch
         return self(x).softmax(dim=-1)
 
     def configure_optimizers(self):
+        """Configure optimizer for runs."""
         return torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
 
 

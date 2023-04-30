@@ -8,18 +8,16 @@ from torch import Tensor, nn
 
 
 class EnsembleLightningModule(LightningModule):
-    """EnsembleLightningModule can be used to constuct an ensemble
-    from a collection of models. Under the hood we wrap every public method defined in the
-    model to return the output from all models in the ensemble. If the output is a tensor,
-    we stack them before returning.
+    """EnsembleLightningModule can be used to constuct an ensemble from a collection of models.
+
+    Under the hood we wrap every public method defined in the model to return the output from all models in the
+    ensemble. If the output is a tensor, we stack them before returning.
 
     Args:
-    ----
         model: A instance of the model you want to turn into an ensemble
         ckpt_paths: A list of strings with paths to checkpoints for the given
 
     Example:
-    -------
         >>> model = MyLitModel(...)
         >>> ensemble_model = EnsembleLightningModule(
         ...   model, ['ckpt/path/model1.ckpt', 'ckpt/path/model2.ckpt']
@@ -44,9 +42,7 @@ class EnsembleLightningModule(LightningModule):
         model._trainer = None
 
     def wrap_callables(self, fn: Callable) -> Callable:
-        """Decorato to wrap a function method to return the collected output from
-        all models in the ensemble.
-        """
+        """Decorato to wrap a function method to return the collected output from all models in the ensemble."""
 
         @functools.wraps(fn)
         def wrapped_func(*args: Any, **kwargs: Any) -> Optional[Any]:

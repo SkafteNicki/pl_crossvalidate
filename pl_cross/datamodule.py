@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader, Subset
 
 
 class DataloaderToDataModule(LightningDataModule):
-    """Converts a set of dataloaders into a lightning datamodule
+    """Converts a set of dataloaders into a lightning datamodule.
 
     Args:
         train_dataloader: Training dataloader
@@ -26,14 +26,35 @@ class DataloaderToDataModule(LightningDataModule):
         self._val_dataloaders = val_dataloaders
 
     def train_dataloader(self) -> DataLoader:
+        """Return training dataloader."""
         return self._train_dataloader
 
     def val_dataloader(self) -> Union[DataLoader, Sequence[DataLoader]]:
+        """Return validation dataloader(s)."""
         return self._val_dataloaders
 
 
 @dataclass
 class KFoldDataModule(LightningDataModule):
+    """K-Fold cross validation datamodule.
+
+    Specialized datamodule that can be used for K-Fold cross validation. The first time the `train_dataloader` or
+    `test_dataloader` method is call, K folds are generated and the dataloaders are created based on the current fold.
+
+    The input is either a single training dataloader (with an optional validation dataloader) or a lightning datamodule
+    that then gets wrapped.
+
+    Args:
+        num_folds: Number of folds
+        shuffle: Whether to shuffle the data before splitting it into folds
+        stratified: Whether to use stratified sampling e.g. for classification we make sure that each fold has the same
+            ratio of samples from each class as the original dataset
+        train_dataloader: Training dataloader
+        val_dataloaders: Validation dataloader(s)
+        datamodule: Lightning datamodule
+
+    """
+
     def __init__(
         self,
         num_folds: int = 5,
@@ -91,19 +112,23 @@ class KFoldDataModule(LightningDataModule):
             self.splits = [split for split in splitter.split(range(len(self.train_dataset)), y=labels)]
 
     def train_dataloader(self) -> DataLoader:
+        """Return training dataloader on the current fold."""
         self.setup_folds()
         train_fold = Subset(self.train_dataset, self.splits[self.fold_index][0])
         return DataLoader(train_fold, **self.dataloader_setting)
 
     def val_dataloader(self) -> DataLoader:
+        """Return validation dataloader, which is the same regardless of the fold."""
         return self.datamodule.val_dataloader()
 
     def test_dataloader(self) -> DataLoader:
+        """Return test dataloader on the current fold."""
         self.setup_folds()
         test_fold = Subset(self.train_dataset, self.splits[self.fold_index][1])
         return DataLoader(test_fold, **self.dataloader_setting)
 
     def get_train_labels(self) -> Optional[List]:
+        """Try to extract the training labels (for classification problems) from the underlying training dataset."""
         dataloader = self.datamodule.train_dataloader()
         # Try to extract labels from the dataset through labels attribute
         if hasattr(dataloader.dataset, "labels"):
@@ -117,7 +142,7 @@ class KFoldDataModule(LightningDataModule):
 
     @property
     def dataloader_setting(self) -> dict:
-        """Return the settings of the train dataloader"""
+        """Return the settings of the train dataloader."""
         if self.dataloader_settings is None:
             orig_dl = self.datamodule.train_dataloader()
             self.dataloader_settings = {
