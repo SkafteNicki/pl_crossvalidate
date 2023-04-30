@@ -9,7 +9,11 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04, macOS-10.15, windows-2019]
 
     steps:
     - name: Checkout
@@ -30,3 +34,15 @@ jobs:
       run: |
         coverage run -m pytest -v
         coverage report -m
+        coverage xml
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      if: always()
+      continue-on-error: true
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: coverage.xml
+        flags: cpu,pytest,${{ runner.os }}
+        name: Test-coverage
+        fail_ci_if_error: false

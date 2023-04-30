@@ -1,4 +1,7 @@
 # pl_cross
+[![license](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/SkafteNicki/pl_cross/blob/master/LICENSE)
+[![Tests](https://github.com/SkafteNicki/pl_cross/actions/workflows/tests.yaml/badge.svg)](https://github.com/SkafteNicki/pl_cross/blob/master/.github/workflows/tests.yaml)
+[![codecov](https://codecov.io/gh/SkafteNicki/pl_cross/branch/master/graph/badge.svg)](https://codecov.io/gh/SkafteNicki/pl_cross)
 
 Cross validation in pytorch lightning made easy :]
 
