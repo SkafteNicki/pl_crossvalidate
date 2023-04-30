@@ -1,4 +1,4 @@
-# pl_cross
+# PL Cross
 [![license](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/SkafteNicki/pl_cross/blob/master/LICENSE)
 [![Tests](https://github.com/SkafteNicki/pl_cross/actions/workflows/tests.yaml/badge.svg)](https://github.com/SkafteNicki/pl_cross/blob/master/.github/workflows/tests.yaml)
 [![codecov](https://codecov.io/gh/SkafteNicki/pl_cross/branch/master/graph/badge.svg)](https://codecov.io/gh/SkafteNicki/pl_cross)
@@ -33,7 +33,7 @@ cross_val_stats = trainer.cross_validate(model, datamodule=datamodule)
 ensemble_model = trainer.create_ensemble(model)
 ```
 
-## Installation
+## 💻 Installation
 
 Clone and run
 ```bash
@@ -42,7 +42,9 @@ cd pl_cross
 pip install .
 ```
 
-## Cross-validation: why?
+Requires `torch>=2.0`, `lightning>=2.0` and `scikit-learn>=1.0`.
+
+## 🤔 Cross-validation: why?
 
 The core functionality of machine learning algorithms is that they are able to *learn* from data. Therefore, it is very
 interesting to ask the question: how *well* does our algorithms actually learn?. This is in abstract question, because
@@ -103,7 +105,7 @@ into K equally large chunks and then we iteratively train on K-1 folds and evalu
 this K times. In general K-fold gives a better approximation of the generalization error than hold-out, but at the
 expense of requiring you to train K models.
 
-## Some notes
+## 🗒️ Some notes
 
 * For the `.cross_validate` method to work, we in addition to the standard set of method in lightning that need
     to be implemented (`training_step` and `configure_optimizers`) we also requires the `test_step` method to be
@@ -147,3 +149,14 @@ expense of requiring you to train K models.
 
         trainer.cross_validate(model, datamodule=datamodule)
         ```
+
+## 😃 Bibtex
+
+If you want to cite the framework feel free to use this:
+
+@article{software:pl_cross,
+  title={PL Cross},
+  author={Nicki S. Detlefsen},
+  journal={GitHub. Note: https://github.com/SkafteNicki/pl_cross},
+  year={2023}
+}
