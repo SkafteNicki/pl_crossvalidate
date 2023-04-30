@@ -4,15 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pl_cross"
+version = "0.1.0"
+description = "Cross validation made easy in Lightning"
+license = "Apache-2.0"
 authors = [
     {name = "Nicki Skafte Detlefsen", email = "skaftenicki@gmail.com"},
 ]
 readme = "README.md"
+repository = "https://github.com/SkafteNicki/pl_cross"
 requires-python = ">=3.10"
-description = "Cross validation made easy in Lightning"
-
-
-dynamic = ["version", "dependencies"]
+dynamic = ["dependencies"]
 
 [project.optional-dependencies]
 dev = ["pytest", "coverage", "ruff", "isort", "black", "mypy", "pre-commit"]

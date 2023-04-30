@@ -132,11 +132,11 @@ expense of requiring you to train K models.
         instead you can do something like this:
 
         ```python
-        from pl_cross import Trainer, KFoldDataModule
+        from pl_cross import KFoldDataModule, KFoldTrainer
 
         model = ...
 
-        trainer = Trainer(...)
+        trainer = KFoldTrainer(...)
 
         datamodule = KFoldDataModule(
             num_folds, shuffle, stratified,  # these should match how the trainer is initialized
