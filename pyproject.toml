@@ -24,6 +24,7 @@ packages = ["pl_cross"]
 dependencies = {file = ["requirements.txt"]}
 
 [tool.coverage.run]
+command_line = "-m pytest tests/"
 omit = ["tests/*"]
 
 [tool.ruff]

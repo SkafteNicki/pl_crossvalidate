@@ -1,6 +1,7 @@
 import os.path as osp
 from typing import Any, List, Optional, Sequence, Union
 
+import torch
 from lightning.pytorch import LightningDataModule, LightningModule, Trainer
 from lightning.pytorch.utilities import rank_zero_info
 from lightning.pytorch.utilities.model_helpers import is_overridden
@@ -27,6 +28,21 @@ class KFoldTrainer(Trainer):
         super().__init__(*args, **kwargs)
         self._version = self.logger.version
 
+    def _construct_kfold_datamodule(
+        self,
+        train_dataloader: Optional[DataLoader] = None,
+        val_dataloaders: Optional[Union[DataLoader, Sequence[DataLoader]]] = None,
+        datamodule: Optional[Union[LightningDataModule, KFoldDataModule]] = None,
+    ) -> KFoldDataModule:
+        return KFoldDataModule(
+            self.num_folds,
+            self.shuffle,
+            self.stratified,
+            train_dataloader=train_dataloader,
+            val_dataloaders=val_dataloaders,
+            datamodule=datamodule,
+        )
+
     def cross_validate(
         self,
         model: LightningModule,
@@ -38,16 +54,9 @@ class KFoldTrainer(Trainer):
             raise ValueError("`cross_validation` method requires you to also define a `test_step` method.")
 
         # construct K fold datamodule if user is not already passing one in
-        cond = train_dataloader is not None or datamodule is not None and not isinstance(datamodule, KFoldDataModule)
-        if cond:
-            datamodule = KFoldDataModule(
-                self.num_folds,
-                self.shuffle,
-                self.stratified,
-                train_dataloader=train_dataloader,
-                val_dataloaders=val_dataloaders,
-                datamodule=datamodule,
-            )
+        if not isinstance(datamodule, KFoldDataModule):
+            datamodule = self._construct_kfold_datamodule(train_dataloader, val_dataloaders, datamodule)
+        self._kfold_datamodule = datamodule
 
         # checkpoint to restore from
         # this is a bit hacky because the model needs to be saved before the fit method
@@ -111,3 +120,55 @@ class KFoldTrainer(Trainer):
                     "beforehand or pass in a list of ckeckpoint paths in the `ckpt_paths` argument"
                 )
         return EnsembleLightningModule(model, ckpt_paths)
+
+    def out_of_sample_score(
+        self,
+        model: LightningModule,
+        datamodule: Optional[KFoldDataModule] = None,
+        ckpt_paths: Optional[List[str]] = None,
+    ) -> LightningModule:
+        score_method = getattr(model, "score", None)
+        if not callable(score_method):
+            raise ValueError("`out_of_sample_score` method requires you to also define a `score` method.")
+
+        if ckpt_paths is None:
+            if hasattr(self, "_ensemple_paths"):
+                ckpt_paths = self._ensemple_paths
+            else:
+                raise ValueError(
+                    "Cannot construct ensemble model. Either call `cross_validate`"
+                    "beforehand or pass in a list of ckeckpoint paths in the `ckpt_paths` argument"
+                )
+
+        if datamodule is None:
+            if not hasattr(self, "_kfold_datamodule"):
+                raise ValueError(
+                    "Cannot compute out of sample scores. Either call `cross_validate` method before"
+                    "`out_of_sample_score` method, or provide an instance of `KFoldDataModule` in the `datamodule`"
+                    "argument."
+                )
+            else:
+                datamodule = self._kfold_datamodule
+        elif not isinstance(datamodule, KFoldDataModule):
+            raise ValueError("`datamodule` argument must be an instance of `KFoldDataModule`.")
+
+        if len(ckpt_paths) != datamodule.num_folds:
+            raise ValueError("Number of checkpoint paths provided does not match the number of folds in the datamodule")
+
+        # temporarily replace the predict_step method with the score method to use the trainer.predict method
+        _orig_predict_method = model.predict_step
+        model.predict_step = model.score
+
+        # run prection on each fold
+        outputs = []
+        for i, ckpt_path in enumerate(ckpt_paths):
+            self._set_fold_index(i, datamodule=datamodule)
+            model.load_from_checkpoint(ckpt_path)
+            out = self.predict(model=model, dataloaders=datamodule.test_dataloader())
+            outputs.append(torch.cat(out, 0))
+        model.predict_step = _orig_predict_method
+
+        # reorder to match the order of the dataset
+        test_indices = torch.cat([torch.tensor(test) for _, test in datamodule.splits])
+        outputs = torch.cat(outputs, 0)
+        return outputs[test_indices.argsort()]

@@ -2,10 +2,11 @@ import pytest
 import torch
 from lightning.pytorch import LightningModule
 
+from pl_cross.datamodule import KFoldDataModule
 from pl_cross.ensemble import EnsembleLightningModule
 from pl_cross.trainer import KFoldTrainer
 
-from .helper import BoringDataModule, BoringModel, LitClassifier
+from . import BoringDataModule, BoringModel, LitClassifier
 
 
 @pytest.mark.parametrize(
@@ -46,21 +47,100 @@ def test_error_on_missing_test_step():
         trainer.cross_validate(model, datamodule=datamodule)
 
 
-def test_ensemble():
+@pytest.fixture(scope="module")
+def paths():
+    """Create paths."""
+    trainer = KFoldTrainer(num_folds=2, max_steps=50)
+    model = LitClassifier()
+    datamodule = BoringDataModule(with_labels=True, feature_size=784)
+    trainer.cross_validate(model, datamodule=datamodule)
+    return trainer._ensemple_paths
+
+
+@pytest.mark.parametrize("ckpt_paths", [None, "paths"])
+def test_ensemble(ckpt_paths, request):
     """Test that trainer.create_ensemble works."""
+    if isinstance(ckpt_paths, str):
+        ckpt_paths = request.getfixturevalue(ckpt_paths)
+
     trainer = KFoldTrainer(num_folds=2, max_steps=50)
     model = LitClassifier()
     datamodule = BoringDataModule(with_labels=True, feature_size=784)
 
-    trainer.cross_validate(model, datamodule=datamodule)
-    ensemble_model = trainer.create_ensemble(model)
+    if ckpt_paths is None:
+        trainer.cross_validate(model, datamodule=datamodule)
+    ensemble_model = trainer.create_ensemble(model, ckpt_paths=ckpt_paths)
 
     assert isinstance(ensemble_model, EnsembleLightningModule)
 
 
 def test_ensemble_error():
+    """Test that an error is raised if we try to create an ensemble without calling `cross_validate` first"""
     trainer = KFoldTrainer(num_folds=2, max_steps=50)
     model = LitClassifier()
 
     with pytest.raises(ValueError, match="Cannot construct ensemble model. Either call `cross_validate`.*"):
         trainer.create_ensemble(model)
+
+
+def test_out_of_sample_missing_score_method():
+    """Test that an error is raised if we try to call `out_of_sample_score` without defining a `score` method."""
+    trainer = KFoldTrainer(num_folds=2, max_steps=50)
+    model = LitClassifier()
+
+    with pytest.raises(ValueError, match="`out_of_sample_score` method requires you to also define a `score` method."):
+        trainer.out_of_sample_score(model)
+
+
+@pytest.mark.parametrize("ckpt_paths", [None, "paths"])
+def test_out_of_sample_method_config_errors(ckpt_paths, request):
+    if isinstance(ckpt_paths, str):
+        ckpt_paths = request.getfixturevalue(ckpt_paths)
+
+    trainer = KFoldTrainer(num_folds=2, max_steps=50)
+
+    class LitClassifierWithScore(LitClassifier):
+        def score(self, batch, batch_idx):
+            return self(batch[0]).softmax(dim=-1)
+
+    model = LitClassifierWithScore()
+
+    datamodule = BoringDataModule(with_labels=True, feature_size=784)
+    k_datamodule = KFoldDataModule(num_folds=5, datamodule=datamodule)
+
+    if ckpt_paths is None:
+        with pytest.raises(ValueError, match="Cannot construct ensemble model. Either call `cross_validate`"):
+            trainer.out_of_sample_score(model)
+    else:
+        with pytest.raises(ValueError, match="Cannot compute out of sample scores. Either call `cross_validate`.*"):
+            trainer.out_of_sample_score(model, ckpt_paths=ckpt_paths)
+
+        with pytest.raises(ValueError, match="`datamodule` argument must be an instance of `KFoldDataModule`."):
+            trainer.out_of_sample_score(model, datamodule=datamodule, ckpt_paths=ckpt_paths)
+
+        with pytest.raises(
+            ValueError, match="Number of checkpoint paths provided does not match the number of folds in the datamodule"
+        ):
+            trainer.out_of_sample_score(model, datamodule=k_datamodule, ckpt_paths=ckpt_paths)
+
+
+@pytest.mark.parametrize("shuffle", [False, True])
+def test_out_sample_method_correctness(shuffle):
+    trainer = KFoldTrainer(num_folds=2, shuffle=shuffle, max_steps=50)
+
+    dataset = torch.utils.data.TensorDataset(
+        torch.arange(110).unsqueeze(1).repeat(1, 784).float(), torch.randint(2, (110,))
+    )
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=10, shuffle=shuffle)
+
+    class LitClassifierWithScore(LitClassifier):
+        def score(self, batch, batch_idx):
+            return batch[0]  # return labels which we can check against
+
+    model = LitClassifierWithScore()
+
+    trainer.cross_validate(model, train_dataloader=dataloader, val_dataloaders=dataloader)
+
+    out = trainer.out_of_sample_score(model)
+    for i, o in enumerate(out):
+        assert o.sum() == i * 784, "out of sample score is incorrectly shuffled"

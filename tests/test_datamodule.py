@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 
 from pl_cross import KFoldDataModule
 
-from .helper import (
+from . import (
     BoringDataModule,
     RandomDataset,
     RandomDictLabelDataset,
@@ -53,7 +53,6 @@ def test_getting_stats():
     """Test that the underlying attributes of the dataloader are the same as the original dataloader."""
     train_dataloader = DataLoader(RandomDataset(32, 64))
     datamodule = KFoldDataModule(5, False, False, train_dataloader=train_dataloader)
-    datamodule.setup()
 
     new_train_dataloader = datamodule.train_dataloader()
     for attr in [
@@ -79,8 +78,6 @@ def test_getting_stats():
 def test_getting_folds(num_folds, shuffle, data, module_type):
     kwargs = {module_type: data}
     datamodule = KFoldDataModule(num_folds, shuffle, False, **kwargs)
-    datamodule.prepare_data()
-    datamodule.setup()
 
     for fold_index in range(num_folds):
         datamodule.fold_index = fold_index
@@ -121,8 +118,7 @@ def test_stratified(data, module_type, add_labels):
         )
 
     for dm in [stratified, not_stratified]:
-        dm.prepare_data()
-        dm.setup()
+        dm.setup_folds()  # initialize the splits
 
     # make sure that by using stratified splitting, the splits actually change
     equal = True
@@ -142,11 +138,8 @@ def test_custom_stratified_label_extractor(custom):
 
     if custom:
         # should work
-        stratified.prepare_data()
-        stratified.setup()
         assert hasattr(stratified, "splits")
     else:
         with pytest.raises(ValueError, match="Tried to extract labels for .*"):
             # should not work, label extraction should fail
-            stratified.prepare_data()
-            stratified.setup()
+            stratified.train_dataloader()

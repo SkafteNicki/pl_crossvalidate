@@ -43,6 +43,10 @@ class LitClassifier(LightningModule):
         self.log("test_loss", loss)
         self.log("test_acc", (y_hat.argmax(dim=-1) == y).float().mean())
 
+    def score(self, batch, batch_idx):
+        x, y = batch
+        return self(x).softmax(dim=-1)
+
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
 
@@ -63,5 +67,9 @@ if __name__ == "__main__":
     trainer = KFoldTrainer(max_epochs=1, num_folds=2)
 
     # Cross validation
-    output = trainer.cross_validate(model, train_dataloader, val_dataloaders=val_dataloader)
+    output = trainer.cross_validate(model, train_dataloader=train_dataloader, val_dataloaders=val_dataloader)
     print(output)
+
+    # Out of sample scoring
+    oos_score = trainer.out_of_sample_score(model)
+    print(oos_score)
