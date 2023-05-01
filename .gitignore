@@ -167,3 +167,6 @@ cython_debug/
 
 # MNIST
 MNIST/
+
+# lightning_logs
+lightning_logs/
