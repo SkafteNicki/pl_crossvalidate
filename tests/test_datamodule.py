@@ -76,6 +76,7 @@ def test_getting_stats():
     [(DataLoader(RandomDataset(32, 64)), "train_dataloader"), (BoringDataModule(), "datamodule")],
 )
 def test_getting_folds(num_folds, shuffle, data, module_type):
+    """Test that the folds are correctly generated."""
     kwargs = {module_type: data}
     datamodule = KFoldDataModule(num_folds, shuffle, False, **kwargs)
 
@@ -106,6 +107,7 @@ def test_getting_folds(num_folds, shuffle, data, module_type):
     ],
 )
 def test_stratified(data, module_type, add_labels):
+    """Test that stratified splitting works as expected."""
     kwargs = {module_type: data}
     stratified = KFoldDataModule(num_folds=5, shuffle=False, stratified=True, **kwargs)
     not_stratified = KFoldDataModule(num_folds=5, shuffle=False, stratified=False, **kwargs)

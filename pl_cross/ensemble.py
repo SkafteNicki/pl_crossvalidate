@@ -41,6 +41,7 @@ class EnsembleLightningModule(LightningModule):
         model._trainer = None
 
     def __getattribute__(self, name: str) -> Any:
+        """Overwrite default behavior such that the ensemble has the same public methods as the base model."""
         if name == "_allowed_methods":  # break recursion
             return super().__getattribute__(name)
         if self._allowed_methods is not None and name in self._allowed_methods:

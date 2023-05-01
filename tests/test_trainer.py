@@ -117,6 +117,7 @@ def test_out_of_sample_missing_score_method(tmp_path):
 
 @pytest.mark.parametrize("ckpt_paths", [None, "paths"])
 def test_out_of_sample_method_config_errors(tmp_path, ckpt_paths, request):
+    """Test that appropriate errors are raised when calling `out_of_sample_score`."""
     if isinstance(ckpt_paths, str):
         ckpt_paths = request.getfixturevalue(ckpt_paths)
 
@@ -149,6 +150,7 @@ def test_out_of_sample_method_config_errors(tmp_path, ckpt_paths, request):
 
 @pytest.mark.parametrize("shuffle", [False, True])
 def test_out_sample_method_correctness(tmp_path, shuffle):
+    """Test that out of sample scores are correctly computed even if the dataloader is shuffled."""
     trainer = KFoldTrainer(num_folds=2, shuffle=shuffle, max_steps=50, default_root_dir=tmp_path)
 
     dataset = torch.utils.data.TensorDataset(
