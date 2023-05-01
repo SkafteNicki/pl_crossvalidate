@@ -1,4 +1,3 @@
-import functools
 import inspect
 from typing import Any, Callable, List, Optional
 
@@ -27,6 +26,8 @@ class EnsembleLightningModule(LightningModule):
 
     """
 
+    _allowed_methods = None
+
     def __init__(self, model: LightningModule, ckpt_paths: List[str]) -> None:
         super().__init__()
         model_cls = type(model)
@@ -34,19 +35,23 @@ class EnsembleLightningModule(LightningModule):
 
         # We need to set the trainer to something to avoid errors
         model._trainer = object()
-        for attr in inspect.getmembers(model, inspect.ismethod):
-            attr_name = attr[0]
-            if not attr_name.startswith("_"):
-                print(attr_name)
-                setattr(self, attr_name, self.wrap_callables(getattr(self, attr_name)))
+        self._allowed_methods = [
+            attr[0] for attr in inspect.getmembers(model, inspect.ismethod) if not attr[0].startswith("_")
+        ]
         model._trainer = None
 
-    def wrap_callables(self, fn: Callable) -> Callable:
+    def __getattribute__(self, name: str) -> Any:
+        if name == "_allowed_methods":  # break recursion
+            return super().__getattribute__(name)
+        if self._allowed_methods is not None and name in self._allowed_methods:
+            return self.wrap_callables(name)
+        return super().__getattribute__(name)
+
+    def wrap_callables(self, name: str) -> Callable:
         """Decorato to wrap a function method to return the collected output from all models in the ensemble."""
 
-        @functools.wraps(fn)
         def wrapped_func(*args: Any, **kwargs: Any) -> Optional[Any]:
-            val = [getattr(m, fn.__name__)(*args, **kwargs) for m in self.models]
+            val = [getattr(m, name)(*args, **kwargs) for m in self.models]
             if isinstance(val[0], Tensor):
                 val = torch.stack(val)
             return val
