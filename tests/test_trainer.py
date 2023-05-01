@@ -1,3 +1,4 @@
+import os
 from copy import deepcopy
 
 import pytest
@@ -27,7 +28,7 @@ def test_trainer_initialization(arguments, expected):
 
 
 @pytest.mark.parametrize("accelerator", ["cpu", "gpu"])
-def test_cross_validate(accelerator):
+def test_cross_validate(tmp_path, accelerator):
     """Test cross validation finish a basic run."""
     if not torch.cuda.is_available() and torch.cuda.device_count() < 1:
         pytest.skip("test requires cuda support")
@@ -35,11 +36,11 @@ def test_cross_validate(accelerator):
     model = BoringModel()
     datamodule = BoringDataModule(feature_size=32)
 
-    trainer = KFoldTrainer(num_folds=2, max_steps=50, accelerator=accelerator, devices=1)
+    trainer = KFoldTrainer(num_folds=2, max_steps=50, accelerator=accelerator, devices=1, default_root_dir=tmp_path)
     trainer.cross_validate(model, datamodule=datamodule)
 
 
-def test_cross_validate_gets_correctly_reset_between_runs():
+def test_cross_validate_gets_correctly_reset_between_runs(tmp_path):
     """Test that the trainer is correctly reset between runs."""
 
     class CheckBetweenRuns(BoringModel):
@@ -55,13 +56,13 @@ def test_cross_validate_gets_correctly_reset_between_runs():
     model = CheckBetweenRuns()
     datamodule = BoringDataModule(feature_size=32)
 
-    trainer = KFoldTrainer(num_folds=2, max_steps=50, accelerator="cpu")
+    trainer = KFoldTrainer(num_folds=2, max_steps=50, accelerator="cpu", default_root_dir=tmp_path)
     trainer.cross_validate(model, datamodule=datamodule)
 
 
-def test_error_on_missing_test_step():
+def test_error_on_missing_test_step(tmp_path):
     """Make sure that error is raised if we cannot create an ensemble."""
-    trainer = KFoldTrainer(num_folds=2, max_steps=50, devices=1)
+    trainer = KFoldTrainer(num_folds=2, max_steps=50, devices=1, default_root_dir=tmp_path)
     model = LitClassifier()
     datamodule = BoringDataModule(feature_size=32)
     model.test_step = LightningModule.test_step
@@ -70,9 +71,9 @@ def test_error_on_missing_test_step():
 
 
 @pytest.fixture(scope="module")
-def paths():
+def paths(tmp_path_factory):
     """Create paths."""
-    trainer = KFoldTrainer(num_folds=2, max_steps=50)
+    trainer = KFoldTrainer(num_folds=2, max_steps=50, default_root_dir=tmp_path_factory.mktemp("paths"))
     model = LitClassifier()
     datamodule = BoringDataModule(with_labels=True, feature_size=784)
     trainer.cross_validate(model, datamodule=datamodule)
@@ -80,12 +81,12 @@ def paths():
 
 
 @pytest.mark.parametrize("ckpt_paths", [None, "paths"])
-def test_ensemble(ckpt_paths, request):
+def test_ensemble(tmp_path, ckpt_paths, request):
     """Test that trainer.create_ensemble works."""
     if isinstance(ckpt_paths, str):
         ckpt_paths = request.getfixturevalue(ckpt_paths)
 
-    trainer = KFoldTrainer(num_folds=2, max_steps=50)
+    trainer = KFoldTrainer(num_folds=2, max_steps=50, default_root_dir=tmp_path)
     model = LitClassifier()
     datamodule = BoringDataModule(with_labels=True, feature_size=784)
 
@@ -96,18 +97,18 @@ def test_ensemble(ckpt_paths, request):
     assert isinstance(ensemble_model, EnsembleLightningModule)
 
 
-def test_ensemble_error():
+def test_ensemble_error(tmp_path):
     """Test that an error is raised if we try to create an ensemble without calling `cross_validate` first."""
-    trainer = KFoldTrainer(num_folds=2, max_steps=50)
+    trainer = KFoldTrainer(num_folds=2, max_steps=50, default_root_dir=tmp_path)
     model = LitClassifier()
 
     with pytest.raises(ValueError, match="Cannot construct ensemble model. Either call `cross_validate`.*"):
         trainer.create_ensemble(model)
 
 
-def test_out_of_sample_missing_score_method():
+def test_out_of_sample_missing_score_method(tmp_path):
     """Test that an error is raised if we try to call `out_of_sample_score` without defining a `score` method."""
-    trainer = KFoldTrainer(num_folds=2, max_steps=50)
+    trainer = KFoldTrainer(num_folds=2, max_steps=50, default_root_dir=tmp_path)
     model = LitClassifier()
 
     with pytest.raises(ValueError, match="`out_of_sample_score` method requires you to also define a `score` method."):
@@ -115,11 +116,11 @@ def test_out_of_sample_missing_score_method():
 
 
 @pytest.mark.parametrize("ckpt_paths", [None, "paths"])
-def test_out_of_sample_method_config_errors(ckpt_paths, request):
+def test_out_of_sample_method_config_errors(tmp_path, ckpt_paths, request):
     if isinstance(ckpt_paths, str):
         ckpt_paths = request.getfixturevalue(ckpt_paths)
 
-    trainer = KFoldTrainer(num_folds=2, max_steps=50)
+    trainer = KFoldTrainer(num_folds=2, max_steps=50, default_root_dir=tmp_path)
 
     class LitClassifierWithScore(LitClassifier):
         def score(self, batch, batch_idx):
@@ -147,8 +148,8 @@ def test_out_of_sample_method_config_errors(ckpt_paths, request):
 
 
 @pytest.mark.parametrize("shuffle", [False, True])
-def test_out_sample_method_correctness(shuffle):
-    trainer = KFoldTrainer(num_folds=2, shuffle=shuffle, max_steps=50)
+def test_out_sample_method_correctness(tmp_path, shuffle):
+    trainer = KFoldTrainer(num_folds=2, shuffle=shuffle, max_steps=50, default_root_dir=tmp_path)
 
     dataset = torch.utils.data.TensorDataset(
         torch.arange(110).unsqueeze(1).repeat(1, 784).float(), torch.randint(2, (110,))
@@ -166,3 +167,17 @@ def test_out_sample_method_correctness(shuffle):
     out = trainer.out_of_sample_score(model)
     for i, o in enumerate(out):
         assert o.sum() == i * 784, "out of sample score is incorrectly shuffled"
+
+
+def test_trainer_default_save_structure(tmp_path):
+    """Test that the default save structure is correct."""
+    trainer = KFoldTrainer(num_folds=2, max_steps=50, default_root_dir=tmp_path)
+    model = LitClassifier()
+    datamodule = BoringDataModule(with_labels=True, feature_size=784)
+    trainer.cross_validate(model, datamodule=datamodule)
+
+    for val in ["fold_0", "fold_1", "kfold_initial_weights.ckpt"]:
+        assert val in os.listdir(str(tmp_path) + "/lightning_logs/version_0")
+    for i in range(2):
+        for val in [f"fold_{i}.ckpt", "hparams.yaml", "metrics.csv"]:
+            assert val in os.listdir(str(tmp_path) + f"/lightning_logs/version_0/fold_{i}")

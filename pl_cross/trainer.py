@@ -64,6 +64,17 @@ class KFoldTrainer(Trainer):
             datamodule=datamodule,
         )
 
+    @property
+    def log_dir(self) -> Optional[str]:
+        """Overwrite default method until https://github.com/Lightning-AI/lightning/issues/17168 is resolved."""
+        if len(self.loggers) > 0:
+            dirpath = self.logger.log_dir
+        else:
+            dirpath = self.default_root_dir
+
+        dirpath = self.strategy.broadcast(dirpath)
+        return dirpath
+
     def cross_validate(
         self,
         model: LightningModule,
@@ -102,13 +113,12 @@ class KFoldTrainer(Trainer):
         results, paths = [], []
         for i in range(self.num_folds):
             self._set_fold_index(i, datamodule=datamodule)
-            print(self.logger.log_dir)
             rank_zero_info(f"===== Starting fold {i+1}/{self.num_folds} =====")
             self.fit(model=model, datamodule=datamodule, ckpt_path=path)
 
-            path = osp.join(self.log_dir, f"fold_{i}.ckpt")
-            self.save_checkpoint(path)
-            paths.append(path)
+            fold_path = osp.join(self.log_dir, f"fold_{i}.ckpt")
+            self.save_checkpoint(fold_path)
+            paths.append(fold_path)
 
             res = self.test(model=model, datamodule=datamodule, verbose=False)
             results.append(res)
@@ -121,7 +131,12 @@ class KFoldTrainer(Trainer):
         if self.loggers is not None:
             for logger in self.loggers:
                 if hasattr(logger, "_version"):
-                    new_version = f"{self._version}/fold_{fold_index}" if self._version else f"fold_{fold_index}"
+                    if not hasattr(logger, "_orig_version"):
+                        logger._orig_version = (
+                            logger._version if isinstance(logger._version, str) else f"version_{logger._version}"
+                        )
+                    logger._version = logger._orig_version
+                    new_version = f"{logger._version}/fold_{fold_index}" if logger._version else f"fold_{fold_index}"
                     logger._version = new_version
                 if hasattr(logger, "_experiment"):
                     logger._experiment = None
