@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pl_cross"
-version = "0.1.0"
+version = "0.0.0"
 description = "Cross validation made easy in Lightning"
 license = {file = "LICENSE"}
 authors = [
@@ -15,7 +15,16 @@ requires-python = ">=3.10"
 dynamic = ["dependencies"]
 
 [project.optional-dependencies]
-dev = ["pytest", "coverage", "ruff", "isort", "black", "mypy", "pre-commit"]
+dev = [
+    "pytest",
+    "coverage",
+    "ruff",
+    "isort",
+    "black",
+    "mypy",
+    "pre-commit",
+    "python-semantic-release",
+]
 
 [tool.setuptools]
 packages = ["pl_cross"]
@@ -43,3 +52,13 @@ line-length = 120
 
 [tool.isort]
 profile = "black"
+
+[tool.semantic_release]
+version_toml = "pyproject.toml:project.version"
+branch = "master"
+build_command = "pip install"
+dist_path = "dist/"
+remove_dist = false
+upload_to_release = true
+upload_to_pypi = false
+patch_without_tag = true
