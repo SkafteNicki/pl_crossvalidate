@@ -3,13 +3,9 @@ name: Python package
 on:
   workflow_run:
     workflows: ["Run tests and coverage"]
-    branches: [main]
+    branches: [master]
     types:
       - completed
-  push:
-    branches:
-      - master
-  pull_request:
 
 jobs:
   release:

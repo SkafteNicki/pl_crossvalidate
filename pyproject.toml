@@ -56,7 +56,6 @@ profile = "black"
 [tool.semantic_release]
 version_toml = "pyproject.toml:project.version"
 branch = "master"
-build_command = "pip install"
 dist_path = "dist/"
 remove_dist = false
 upload_to_release = true
