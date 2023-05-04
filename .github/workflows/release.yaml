@@ -1,11 +1,7 @@
 name: Python package
 
 on:
-  workflow_run:
-    workflows: ["Run tests and coverage"]
-    branches: [master]
-    types:
-      - completed
+  workflow_dispatch
 
 jobs:
   release:
@@ -42,3 +38,4 @@ jobs:
         user: __token__
         password: ${{ secrets.TEST_PYPI_API_TOKEN }}
         repository_url: https://test.pypi.org/legacy/
+        skip_existing: true

@@ -154,9 +154,11 @@ expense of requiring you to train K models.
 
 If you want to cite the framework feel free to use this:
 
+```bibtex
 @article{software:pl_cross,
-  title={PL Cross},
-  author={Nicki S. Detlefsen},
-  journal={GitHub. Note: https://github.com/SkafteNicki/pl_cross},
-  year={2023}
+    title={PL Cross},
+    author={Nicki S. Detlefsen},
+    journal={GitHub. Note: https://github.com/SkafteNicki/pl_cross},
+    year={2023}
 }
+```
