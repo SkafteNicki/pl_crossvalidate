@@ -12,25 +12,16 @@ authors = [
 ]
 readme = "README.md"
 requires-python = ">=3.10"
-dynamic = ["dependencies"]
-
-[project.optional-dependencies]
-dev = [
-    "pytest",
-    "coverage",
-    "ruff",
-    "isort",
-    "black",
-    "mypy",
-    "pre-commit",
-    "python-semantic-release",
-]
+dynamic = ["dependencies", "optional-dependencies"]
 
 [tool.setuptools]
 packages = ["pl_cross"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools.dynamic.optional-dependencies]
+dev = {file = ['requirements_dev.txt']}
 
 [tool.coverage.run]
 command_line = "-m pytest tests/"
