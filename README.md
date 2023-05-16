@@ -35,11 +35,13 @@ ensemble_model = trainer.create_ensemble(model)
 
 ## 💻 Installation
 
-Clone and run
 ```bash
-git clone https://github.com/SkafteNicki/pl_cross
-cd pl_cross
-pip install .
+pip install pl_cross
+```
+
+Or latest version from github
+```bash
+pip install https://github.com/Lightning-AI/torchmetrics/archive/master.zip
 ```
 
 Requires `torch>=2.0`, `lightning>=2.0` and `scikit-learn>=1.0`.
