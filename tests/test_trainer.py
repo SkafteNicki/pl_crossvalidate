@@ -5,9 +5,9 @@ import pytest
 import torch
 from lightning.pytorch import LightningModule
 
-from pl_cross.datamodule import KFoldDataModule
-from pl_cross.ensemble import EnsembleLightningModule
-from pl_cross.trainer import KFoldTrainer
+from pl_crossvalidate.datamodule import KFoldDataModule
+from pl_crossvalidate.ensemble import EnsembleLightningModule
+from pl_crossvalidate.trainer import KFoldTrainer
 
 from . import BoringDataModule, BoringModel, LitClassifier
 

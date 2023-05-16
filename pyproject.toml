@@ -3,7 +3,7 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pl_cross"
+name = "pl_crossvalidate"
 version = "0.0.3"
 description = "Cross validation made easy in Lightning"
 license = {file = "LICENSE"}
@@ -15,7 +15,7 @@ requires-python = ">=3.10"
 dynamic = ["dependencies", "optional-dependencies"]
 
 [tool.setuptools]
-packages = ["pl_cross"]
+packages = ["pl_crossvalidate"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}

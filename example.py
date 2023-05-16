@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets import MNIST
 
-from pl_cross import KFoldTrainer
+from pl_crossvalidate import KFoldTrainer
 
 
 class LitClassifier(LightningModule):

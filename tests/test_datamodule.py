@@ -3,7 +3,7 @@ import pytest
 import torch
 from torch.utils.data import DataLoader
 
-from pl_cross import KFoldDataModule
+from pl_crossvalidate import KFoldDataModule
 
 from . import (
     BoringDataModule,

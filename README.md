@@ -1,14 +1,14 @@
 # PL Cross
-[![license](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/SkafteNicki/pl_cross/blob/master/LICENSE)
-[![Tests](https://github.com/SkafteNicki/pl_cross/actions/workflows/tests.yaml/badge.svg)](https://github.com/SkafteNicki/pl_cross/blob/master/.github/workflows/tests.yaml)
-[![codecov](https://codecov.io/gh/SkafteNicki/pl_cross/branch/master/graph/badge.svg)](https://codecov.io/gh/SkafteNicki/pl_cross)
+[![license](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/SkafteNicki/pl_crossvalidate/blob/master/LICENSE)
+[![Tests](https://github.com/SkafteNicki/pl_crossvalidate/actions/workflows/tests.yaml/badge.svg)](https://github.com/SkafteNicki/pl_crossvalidate/blob/master/.github/workflows/tests.yaml)
+[![codecov](https://codecov.io/gh/SkafteNicki/pl_crossvalidate/branch/master/graph/badge.svg)](https://codecov.io/gh/SkafteNicki/pl_crossvalidate)
 
 Cross validation in pytorch lightning made easy :]
 
-Just import the specialized trainer from `pl_cross` instead of `pytorch_lightning` and you are set
+Just import the specialized trainer from `pl_crossvalidate` instead of `pytorch_lightning` and you are set
 ```python
 # To distinguish from the original trainer the new trainer is called KFoldTrainer by default
-from pl_cross import KFoldTrainer as Trainer
+from pl_crossvalidate import KFoldTrainer as Trainer
 
 # Normal Lightning module
 model = MyModel(...)
@@ -36,7 +36,7 @@ ensemble_model = trainer.create_ensemble(model)
 ## 💻 Installation
 
 ```bash
-pip install pl-cross
+pip install pl-crossvalidate
 ```
 
 Or latest version from github
@@ -136,7 +136,7 @@ expense of requiring you to train K models.
         instead you can do something like this:
 
         ```python
-        from pl_cross import KFoldDataModule, KFoldTrainer
+        from pl_crossvalidate import KFoldDataModule, KFoldTrainer
 
         model = ...
 
@@ -157,10 +157,10 @@ expense of requiring you to train K models.
 If you want to cite the framework feel free to use this:
 
 ```bibtex
-@article{software:pl_cross,
+@article{software:pl_crossvalidate,
     title={PL Cross},
     author={Nicki S. Detlefsen},
-    journal={GitHub. Note: https://github.com/SkafteNicki/pl_cross},
+    journal={GitHub. Note: https://github.com/SkafteNicki/pl_crossvalidate},
     year={2023}
 }
 ```
