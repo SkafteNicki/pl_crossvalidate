@@ -1,4 +1,4 @@
-# PL Cross
+# PL Crossvalidate
 [![license](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/SkafteNicki/pl_crossvalidate/blob/master/LICENSE)
 [![Tests](https://github.com/SkafteNicki/pl_crossvalidate/actions/workflows/tests.yaml/badge.svg)](https://github.com/SkafteNicki/pl_crossvalidate/blob/master/.github/workflows/tests.yaml)
 [![codecov](https://codecov.io/gh/SkafteNicki/pl_crossvalidate/branch/master/graph/badge.svg)](https://codecov.io/gh/SkafteNicki/pl_crossvalidate)
@@ -158,7 +158,7 @@ If you want to cite the framework feel free to use this:
 
 ```bibtex
 @article{software:pl_crossvalidate,
-    title={PL Cross},
+    title={PL Crossvalidate},
     author={Nicki S. Detlefsen},
     journal={GitHub. Note: https://github.com/SkafteNicki/pl_crossvalidate},
     year={2023}
