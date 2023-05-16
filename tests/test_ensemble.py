@@ -2,7 +2,7 @@ import pytest
 import torch
 from torch import Tensor
 
-from pl_cross import EnsembleLightningModule, KFoldTrainer
+from pl_crossvalidate import EnsembleLightningModule, KFoldTrainer
 
 from . import BoringDataModule, BoringModel, LitClassifier
 

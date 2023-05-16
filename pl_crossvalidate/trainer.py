@@ -7,8 +7,8 @@ from lightning.pytorch.utilities import rank_zero_info
 from lightning.pytorch.utilities.model_helpers import is_overridden
 from torch.utils.data import DataLoader
 
-from pl_cross.datamodule import KFoldDataModule
-from pl_cross.ensemble import EnsembleLightningModule
+from pl_crossvalidate.datamodule import KFoldDataModule
+from pl_crossvalidate.ensemble import EnsembleLightningModule
 
 
 class KFoldTrainer(Trainer):
