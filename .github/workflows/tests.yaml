@@ -8,10 +8,11 @@ on:
 
 jobs:
   build:
-    runs-on: {{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
-      os: [ubuntu-latest, windows-latest, macos-latest]
-      python-version: [3.10, 3.11]
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: [3.10, 3.11]
 
     steps:
     - name: Checkout
