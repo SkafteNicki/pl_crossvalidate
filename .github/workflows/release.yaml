@@ -1,7 +1,7 @@
 name: "Release package"
 
 on:
-  workflow_dispatch
+  workflow_dispatch:
     inputs:
       versiontype:
         description: 'Version type'
