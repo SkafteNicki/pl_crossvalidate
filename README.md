@@ -36,7 +36,7 @@ ensemble_model = trainer.create_ensemble(model)
 ## 💻 Installation
 
 ```bash
-pip install pl_cross
+pip install pl-cross
 ```
 
 Or latest version from github
