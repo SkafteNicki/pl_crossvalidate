@@ -40,8 +40,9 @@ pip install pl-crossvalidate
 ```
 
 Or latest version from github
+
 ```bash
-pip install https://github.com/Lightning-AI/torchmetrics/archive/master.zip
+pip install https://github.com/SkafteNicki/pl_crossvalidate/archive/master.zip
 ```
 
 Requires `torch>=2.0`, `lightning>=2.0` and `scikit-learn>=1.0`.
