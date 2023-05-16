@@ -1,4 +1,4 @@
-name: "Run tests and coverage"
+name: "Tests"
 
 on:
   push:
