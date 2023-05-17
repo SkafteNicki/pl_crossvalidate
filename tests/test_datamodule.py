@@ -133,7 +133,7 @@ def test_stratified(data, module_type, add_labels):
 @pytest.mark.parametrize("custom", [False, True])
 def test_custom_stratified_label_extractor(custom):
     """Test that error is raised if the custom label extractor does not work and that everything work if it does."""
-    train_dataloader = DataLoader(RandomDictLabelDataset(32, 64))
+    train_dataloader = DataLoader(RandomDataset(32, 64))
     stratified = KFoldDataModule(stratified=True, train_dataloader=train_dataloader)
     if custom:
         stratified.label_extractor = lambda batch: batch["b"]
@@ -145,3 +145,14 @@ def test_custom_stratified_label_extractor(custom):
         with pytest.raises(ValueError, match="Tried to extract labels for .*"):
             # should not work, label extraction should fail
             stratified.train_dataloader()
+
+
+def test_get_labels():
+    """Test that the labels are correctly extracted."""
+    train_dataloader = DataLoader(RandomLabelDataset(32, 64))
+    stratified = KFoldDataModule(stratified=True, train_dataloader=train_dataloader, val_dataloaders=train_dataloader)
+
+    for dl in [stratified.datamodule.train_dataloader(), stratified.datamodule.val_dataloader()]:
+        labels = stratified.get_labels(dl)
+        assert len(labels) == len(dl.dataset)
+        assert isinstance(labels, list)

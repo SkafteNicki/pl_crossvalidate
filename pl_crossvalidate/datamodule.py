@@ -97,7 +97,7 @@ class KFoldDataModule(LightningDataModule):
         if self.splits is None:
             labels = None
             if self.stratified:
-                labels = self.get_train_labels()
+                labels = self.get_labels(self.datamodule.train_dataloader())
                 if labels is None:
                     raise ValueError(
                         "Tried to extract labels for stratified K folds but failed."
@@ -127,9 +127,8 @@ class KFoldDataModule(LightningDataModule):
         test_fold = Subset(self.train_dataset, self.splits[self.fold_index][1])
         return DataLoader(test_fold, **self.dataloader_setting)
 
-    def get_train_labels(self) -> Optional[List]:
+    def get_labels(self, dataloader: DataLoader) -> Optional[List]:
         """Try to extract the training labels (for classification problems) from the underlying training dataset."""
-        dataloader = self.datamodule.train_dataloader()
         # Try to extract labels from the dataset through labels attribute
         if hasattr(dataloader.dataset, "labels"):
             return dataloader.dataset.labels.tolist()
