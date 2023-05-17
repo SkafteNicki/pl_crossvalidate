@@ -5,12 +5,7 @@ from torch.utils.data import DataLoader
 
 from pl_crossvalidate import KFoldDataModule
 
-from . import (
-    BoringDataModule,
-    RandomDataset,
-    RandomDictLabelDataset,
-    RandomLabelDataset,
-)
+from . import BoringDataModule, RandomDataset, RandomLabelDataset
 
 train_dataloader = DataLoader(RandomDataset(32, 64))
 datamodule = BoringDataModule()
