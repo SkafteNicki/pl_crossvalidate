@@ -5,4 +5,4 @@ mypy==1.4.1
 pre-commit==3.3.3
 pytest==7.4.0
 python-semantic-release==8.0.4
-ruff==0.0.280
+ruff==0.1.3
