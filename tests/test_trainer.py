@@ -30,7 +30,7 @@ def test_trainer_initialization(arguments, expected):
 @pytest.mark.parametrize("accelerator", ["cpu", "gpu"])
 def test_cross_validate(tmp_path, accelerator):
     """Test cross validation finish a basic run."""
-    if not torch.cuda.is_available() and torch.cuda.device_count() < 1:
+    if accelerator == "gpu" and not torch.cuda.is_available() and torch.cuda.device_count() < 1:
         pytest.skip("test requires cuda support")
 
     model = BoringModel()

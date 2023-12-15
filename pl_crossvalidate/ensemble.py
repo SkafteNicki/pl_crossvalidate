@@ -30,8 +30,7 @@ class EnsembleLightningModule(LightningModule):
 
     def __init__(self, model: LightningModule, ckpt_paths: List[str]) -> None:
         super().__init__()
-        model_cls = type(model)
-        self.models = nn.ModuleList([model_cls.load_from_checkpoint(p) for p in ckpt_paths])
+        self.models = nn.ModuleList([type(model).load_from_checkpoint(p) for p in ckpt_paths])
 
         # We need to set the trainer to something to avoid errors
         model._trainer = object()
