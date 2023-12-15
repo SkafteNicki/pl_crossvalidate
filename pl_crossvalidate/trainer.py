@@ -218,16 +218,16 @@ class KFoldTrainer(Trainer):
 
         # temporarily replace the predict_step method with the score method to use the trainer.predict method
         _orig_predict_method = model.predict_step
-        model.predict_step = model.score
 
         # run prection on each fold
         outputs = []
         for i, ckpt_path in enumerate(ckpt_paths):
             self._set_fold_index(i, datamodule=datamodule)
-            model.load_from_checkpoint(ckpt_path)
+            model = type(model).load_from_checkpoint(ckpt_path)
+            model.predict_step = score_method
             out = self.predict(model=model, dataloaders=datamodule.test_dataloader())
+            model.predict_step = _orig_predict_method
             outputs.append(torch.cat(out, 0))
-        model.predict_step = _orig_predict_method
 
         # reorder to match the order of the dataset
         test_indices = torch.cat([torch.tensor(test) for _, test in datamodule.splits])
